@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>线索反馈助手</title>
+<style>
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #f5f5f7;
+    --color-surface-elevated: #ffffff;
+    --color-text: #1d1d1f;
+    --color-text-muted: #86868b;
+    --color-accent: #0071e3;
+    --color-accent-text: #ffffff;
+    --color-accent-light: #0077ed;
+    --color-hover: #e8e8ed;
+    --color-border: #e5e5e7;
+    --color-focus: #0071e3;
+    --color-input-bg: #ffffff;
+    --color-input-border: #d2d2d7;
+    --color-input-text: #1d1d1f;
+    --color-success: #30d158;
+    --color-warning: #ff9f0a;
+    --color-danger: #ff3b30;
+    --color-info: #0a84ff;
+    --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1c1c1e;
+      --color-surface: #2c2c2e;
+      --color-surface-elevated: #3a3a3c;
+      --color-text: #f5f5f7;
+      --color-text-muted: #98989d;
+      --color-accent: #0a84ff;
+      --color-accent-text: #ffffff;
+      --color-accent-light: #64d2ff;
+      --color-hover: #3a3a3c;
+      --color-border: #38383a;
+      --color-focus: #0a84ff;
+      --color-input-bg: #2c2c2e;
+      --color-input-border: #48484a;
+      --color-input-text: #f5f5f7;
+      --color-success: #30d158;
+      --color-warning: #ff9f0a;
+      --color-danger: #ff453a;
+      --color-info: #0a84ff;
+    }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body {
+    height:100%; width:100%; overflow:hidden;
+    font-family:var(--font-family); background:var(--color-bg);
+  }
+  .app {
+    width:100%; height:100%;
+    display:flex; flex-direction:column;
+    max-width:480px; margin:0 auto;
+  }
+  .nav-bar {
+    height:56px; padding:0 16px;
+    display:flex; align-items:center; gap:12px;
+    border-bottom:1px solid var(--color-border);
+    background:var(--color-bg);
+    flex-shrink:0;
+    padding-top:env(safe-area-inset-top);
+  }
+  .nav-avatar {
+    width:40px; height:40px; border-radius:50%;
+    background:var(--color-accent); color:var(--color-accent-text);
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; flex-shrink:0;
+  }
+  .nav-info { flex:1; }
+  .nav-title { font-size:16px; font-weight:600; color:var(--color-text); }
+  .nav-subtitle { font-size:12px; color:var(--color-text-muted); margin-top:1px; }
+  .nav-menu { font-size:22px; color:var(--color-text-muted); padding:8px; cursor:pointer; }
+  .chat-area {
+    flex:1; overflow-y:auto; padding:16px; padding-bottom:8px;
+    display:flex; flex-direction:column; gap:14px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .chat-area::-webkit-scrollbar { width:0; }
+  .msg-row { display:flex; gap:10px; max-width:90%; animation:msgIn 0.3s ease; }
+  .msg-row.agent { align-self:flex-start; }
+  .msg-row.user { align-self:flex-end; flex-direction:row-reverse; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .msg-avatar {
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600;
+  }
+  .msg-row.agent .msg-avatar { background:var(--color-accent); color:var(--color-accent-text); }
+  .msg-row.user .msg-avatar { background:var(--color-success); color:#fff; }
+  .msg-bubble {
+    padding:10px 14px; border-radius:16px;
+    font-size:15px; line-height:1.55; color:var(--color-text);
+    word-break:break-word;
+  }
+  .msg-row.agent .msg-bubble {
+    background:var(--color-surface);
+    border-bottom-left-radius:4px;
+  }
+  .msg-row.user .msg-bubble {
+    background:var(--color-accent); color:var(--color-accent-text);
+    border-bottom-right-radius:4px;
+  }
+  .quick-replies {
+    display:flex; flex-wrap:wrap; gap:8px;
+    padding:4px 0 0 42px;
+    animation:msgIn 0.3s ease;
+  }
+  .quick-btn {
+    padding:8px 16px; border-radius:20px;
+    background:var(--color-surface-elevated); border:1.5px solid var(--color-accent);
+    color:var(--color-accent); font-size:14px; font-weight:500;
+    cursor:pointer; transition:all 0.15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .quick-btn:active { transform:scale(0.95); background:var(--color-hover); }
+  .quick-btn.selected {
+    background:var(--color-accent); color:var(--color-accent-text);
+    border-color:var(--color-accent);
+  }
+  .form-card {
+    margin-left:42px; background:var(--color-surface-elevated);
+    border:1px solid var(--color-border); border-radius:16px;
+    padding:18px; max-width:calc(100% - 52px);
+    animation:msgIn 0.3s ease;
+  }
+  .form-card-title {
+    font-size:14px; font-weight:600; color:var(--color-text);
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .form-card-title span { font-size:18px; }
+  .form-group { margin-bottom:14px; }
+  .form-label { display:block; font-size:12px; color:var(--color-text-muted); margin-bottom:5px; font-weight:500; }
+  .form-input {
+    width:100%; padding:10px 14px;
+    background:var(--color-input-bg); border:1px solid var(--color-input-border);
+    border-radius:10px; color:var(--color-input-text); font-size:15px;
+    font-family:var(--font-family);
+    -webkit-appearance:none;
+  }
+  .form-input:focus { outline:none; border-color:var(--color-focus); }
+  .form-select {
+    width:100%; padding:10px 14px;
+    background:var(--color-input-bg); border:1px solid var(--color-input-border);
+    border-radius:10px; color:var(--color-input-text); font-size:15px;
+    font-family:var(--font-family);
+  }
+  .form-select:focus { outline:none; border-color:var(--color-focus); }
+  .form-btn {
+    width:100%; padding:12px; background:var(--color-accent);
+    color:var(--color-accent-text); border:none; border-radius:12px;
+    font-size:15px; font-weight:600; cursor:pointer;
+    font-family:var(--font-family);
+    transition:opacity 0.15s;
+  }
+  .form-btn:active { opacity:0.8; }
+  .form-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .summary-card {
+    margin-left:42px; background:var(--color-surface-elevated);
+    border:1px solid var(--color-border); border-radius:16px;
+    padding:18px; max-width:calc(100% - 52px);
+    animation:msgIn 0.3s ease;
+  }
+  .summary-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; font-size:14px;
+    border-bottom:1px solid var(--color-border);
+  }
+  .summary-row:last-of-type { border-bottom:none; }
+  .summary-key { color:var(--color-text-muted); font-size:13px; }
+  .summary-val { color:var(--color-text); font-weight:600; text-align:right; max-width:60%; }
+  .summary-actions { margin-top:14px; display:flex; gap:10px; }
+  .summary-actions .form-btn { flex:1; }
+  .btn-secondary {
+    background:var(--color-surface) !important; color:var(--color-text) !important;
+    border:1px solid var(--color-border) !important;
+  }
+  .btn-success { background:var(--color-success) !important; }
+  .lead-tag {
+    display:inline-block; padding:2px 10px; border-radius:20px;
+    font-size:12px; font-weight:600;
+    background:rgba(48,209,88,0.15); color:var(--color-success);
+  }
+  .input-bar {
+    padding:10px 12px; padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--color-border);
+    display:flex; align-items:center; gap:10px;
+    background:var(--color-bg);
+    flex-shrink:0;
+  }
+  .input-field {
+    flex:1; padding:12px 18px; border-radius:24px;
+    background:var(--color-surface); border:1px solid var(--color-border);
+    font-size:15px; color:var(--color-input-text);
+    font-family:var(--font-family);
+    -webkit-appearance:none;
+  }
+  .input-field:focus { outline:none; border-color:var(--color-focus); background:var(--color-input-bg); }
+  .send-btn {
+    width:42px; height:42px; border-radius:50%;
+    background:var(--color-accent); color:var(--color-accent-text);
+    border:none; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+    transition:opacity 0.15s;
+  }
+  .send-btn:active { opacity:0.7; }
+  .typing-dot {
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--color-text-muted); animation:blink 1.4s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay:0.2s; }
+  .typing-dot:nth-child(3) { animation-delay:0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.25} 40%{opacity:1} }
+  .toast {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.75); color:#fff; padding:14px 28px;
+    border-radius:12px; font-size:15px; font-weight:500;
+    z-index:999; animation:toastIn 0.3s ease;
+    pointer-events:none;
+  }
+  @keyframes toastIn { from{opacity:0;transform:translate(-50%,-50%) scale(0.9)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="nav-bar">
+    <div class="nav-avatar">AI</div>
+    <div class="nav-info">
+      <div class="nav-title">线索反馈助手</div>
+      <div class="nav-subtitle">在线 &middot; 智能引导反馈</div>
+    </div>
+    <div class="nav-menu">&#8943;</div>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <div class="msg-row agent">
+      <div class="msg-avatar">AI</div>
+      <div class="msg-bubble">你好！我是线索反馈助手<br>请告诉我你要反馈的线索客户名称，我来帮你快速完成记录。</div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <input class="input-field" id="inputField" placeholder="输入客户名称或信息..." enterkeyhint="send" />
+    <button class="send-btn" id="sendBtn" onclick="handleSend()">&#10148;</button>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const inputField = document.getElementById('inputField');
+let currentStep = 0;
+let leadData = { customer:'', hasOpportunity:null, opportunityId:'', noReason:'', oppStage:'', oppAmount:'' };
+let allLeads = [];
+
+function scrollBottom() {
+  setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 60);
+}
+
+function addAgentMsg(html) {
+  const row = document.createElement('div');
+  row.className = 'msg-row agent';
+  row.innerHTML = '<div class="msg-avatar">AI</div><div class="msg-bubble">' + html + '</div>';
+  chatArea.appendChild(row);
+  scrollBottom();
+}
+
+function addUserMsg(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = '<div class="msg-avatar">我</div><div class="msg-bubble">' + text + '</div>';
+  chatArea.appendChild(row);
+  scrollBottom();
+}
+
+function addTyping() {
+  const row = document.createElement('div');
+  row.className = 'msg-row agent';
+  row.id = 'typing';
+  row.innerHTML = '<div class="msg-avatar">AI</div><div class="msg-bubble"><span class="typing-dot"></span>&nbsp;<span class="typing-dot"></span>&nbsp;<span class="typing-dot"></span></div>';
+  chatArea.appendChild(row);
+  scrollBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+function showToast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+function addQuickReplies(options, callback) {
+  const wrap = document.createElement('div');
+  wrap.className = 'quick-replies';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-btn';
+    btn.textContent = opt;
+    btn.onclick = () => {
+      wrap.querySelectorAll('.quick-btn').forEach(b => { b.classList.remove('selected'); b.style.pointerEvents='none'; });
+      btn.classList.add('selected');
+      setTimeout(() => { wrap.remove(); callback(opt); }, 200);
+    };
+    wrap.appendChild(btn);
+  });
+  chatArea.appendChild(wrap);
+  scrollBottom();
+}
+
+function addFormCard(config) {
+  const card = document.createElement('div');
+  card.className = 'form-card';
+  let html = '<div class="form-card-title"><span>' + config.icon + '</span>' + config.title + '</div>';
+  config.fields.forEach(f => {
+    if (f.type === 'select') {
+      html += '<div class="form-group"><label class="form-label">' + f.label + '</label><select class="form-select" id="fc_' + f.key + '">' + f.options.map(o => '<option value="' + o + '">' + o + '</option>').join('') + '</select></div>';
+    } else {
+      html += '<div class="form-group"><label class="form-label">' + f.label + '</label><input class="form-input" id="fc_' + f.key + '" type="' + (f.inputType||'text') + '" placeholder="' + (f.placeholder||'') + '" /></div>';
+    }
+  });
+  html += '<button class="form-btn" onclick="submitFormCard(this)">' + (config.btnText||'确认提交') + '</button>';
+  card.innerHTML = html;
+  card.dataset.callback = config.callbackName;
+  chatArea.appendChild(card);
+  scrollBottom();
+  setTimeout(() => {
+    const firstInput = card.querySelector('.form-input');
+    if (firstInput) firstInput.focus();
+  }, 400);
+}
+
+function submitFormCard(btn) {
+  const card = btn.closest('.form-card');
+  const cbName = card.dataset.callback;
+  const inputs = card.querySelectorAll('.form-input, .form-select');
+  const data = {};
+  let valid = true;
+  inputs.forEach(inp => {
+    data[inp.id.replace('fc_','')] = inp.value;
+    if (inp.classList.contains('form-input') && !inp.value.trim()) {
+      inp.style.borderColor = 'var(--color-danger)';
+      valid = false;
+    }
+  });
+  if (!valid) { showToast('请填写完整信息'); return; }
+  btn.disabled = true;
+  btn.textContent = '已提交 ✓';
+  card.style.opacity = '0.65';
+  card.querySelectorAll('.form-input,.form-select').forEach(i => i.disabled = true);
+  if (window[cbName]) window[cbName](data);
+}
+
+function addSummaryCard(rows) {
+  const card = document.createElement('div');
+  card.className = 'summary-card';
+  let html = '<div class="form-card-title"><span>📋</span>线索反馈汇总</div>';
+  rows.forEach(r => {
+    html += '<div class="summary-row"><span class="summary-key">' + r.key + '</span><span class="summary-val">' + r.val + '</span></div>';
+  });
+  html += '<div class="summary-actions"><button class="form-btn btn-success" onclick="confirmSubmit(this)">确认提交</button><button class="form-btn btn-secondary" onclick="editSubmit(this)">修改</button></div>';
+  card.innerHTML = html;
+  chatArea.appendChild(card);
+  scrollBottom();
+}
+
+function handleSend() {
+  const text = inputField.value.trim();
+  if (!text) return;
+  inputField.value = '';
+  inputField.blur();
+
+  if (currentStep === 0) {
+    addUserMsg(text);
+    leadData.customer = text;
+    currentStep = 1;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('收到，客户 <strong>' + text + '</strong> <span class="lead-tag">已记录</span><br><br>请问该线索是否产生了商机？');
+      addQuickReplies(['有商机', '无商机'], handleOpportunityChoice);
+    }, 700);
+  } else if (currentStep === 99) {
+    addUserMsg(text);
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('好的，已记录补充信息。还有其他需要反馈的线索吗？');
+      addQuickReplies(['继续反馈新线索', '查看已反馈列表', '暂时没有了'], handleContinueChoice);
+    }, 500);
+  }
+}
+
+function handleOpportunityChoice(choice) {
+  addUserMsg(choice);
+  if (choice === '有商机') {
+    leadData.hasOpportunity = true;
+    currentStep = 2;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('请填写商机详细信息：');
+      addFormCard({
+        icon:'📝', title:'商机信息',
+        fields:[
+          { key:'oppId', label:'商机编号 *', placeholder:'例: BH-202604-001', type:'text' },
+          { key:'oppStage', label:'商机阶段', type:'select', options:['初步接洽','需求确认','方案报价','商务谈判','赢单','输单'] },
+          { key:'oppAmount', label:'预估金额(万元)', placeholder:'例: 50', type:'text', inputType:'number' }
+        ],
+        btnText:'确认信息',
+        callbackName:'onOppFormSubmit'
+      });
+    }, 700);
+  } else {
+    leadData.hasOpportunity = false;
+    currentStep = 3;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('了解，请选择无商机的主要原因：');
+      addQuickReplies(['客户无预算','需求不匹配','已选择竞品','暂无计划','联系不上','其他原因'], handleNoReasonChoice);
+    }, 700);
+  }
+}
+
+window.onOppFormSubmit = function(data) {
+  leadData.opportunityId = data.oppId;
+  leadData.oppStage = data.oppStage;
+  leadData.oppAmount = data.oppAmount;
+  currentStep = 4;
+  addTyping();
+  setTimeout(() => {
+    removeTyping();
+    addAgentMsg('信息收集完毕，请确认以下反馈：');
+    addSummaryCard([
+      { key:'客户名称', val:leadData.customer },
+      { key:'是否有商机', val:'<span style="color:var(--color-success);font-weight:700">有商机</span>' },
+      { key:'商机编号', val:leadData.opportunityId },
+      { key:'商机阶段', val:leadData.oppStage },
+      { key:'预估金额', val:leadData.oppAmount + ' 万' }
+    ]);
+  }, 700);
+};
+
+function handleNoReasonChoice(choice) {
+  addUserMsg(choice);
+  leadData.noReason = choice;
+  if (choice === '其他原因') {
+    currentStep = 31;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('请输入具体的无商机原因：');
+      currentStep = 31;
+    }, 500);
+    const origSend = handleSend;
+    handleSend = function() {
+      const text = inputField.value.trim();
+      if (!text || currentStep !== 31) { origSend(); return; }
+      inputField.value = '';
+      inputField.blur();
+      addUserMsg(text);
+      leadData.noReason = text;
+      currentStep = 4;
+      handleSend = origSend;
+      showSummaryNoOpp();
+    };
+    return;
+  }
+  currentStep = 4;
+  showSummaryNoOpp();
+}
+
+function showSummaryNoOpp() {
+  addTyping();
+  setTimeout(() => {
+    removeTyping();
+    addAgentMsg('信息收集完毕，请确认以下反馈：');
+    addSummaryCard([
+      { key:'客户名称', val:leadData.customer },
+      { key:'是否有商机', val:'<span style="color:var(--color-danger);font-weight:700">无商机</span>' },
+      { key:'原因', val:leadData.noReason }
+    ]);
+  }, 700);
+}
+
+function confirmSubmit(btn) {
+  const card = btn.closest('.summary-card');
+  card.querySelectorAll('.form-btn').forEach(b => b.disabled = true);
+  btn.textContent = '提交中...';
+
+  const refId = 'LD-' + Date.now().toString().slice(-6);
+  allLeads.push({ ...leadData, refId:refId, time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) });
+
+  setTimeout(() => {
+    card.style.opacity = '0.6';
+    btn.textContent = '已提交 ✓';
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('线索反馈已成功提交！<br><br>反馈编号：<strong>' + refId + '</strong><br>已同步至CRM系统。<br><br>还需要继续吗？');
+      addQuickReplies(['继续反馈新线索','查看已反馈列表','暂时没有了'], handleContinueChoice);
+      currentStep = 99;
+    }, 700);
+  }, 800);
+}
+
+function editSubmit(btn) {
+  const card = btn.closest('.summary-card');
+  card.querySelectorAll('.form-btn').forEach(b => b.disabled = true);
+  card.style.opacity = '0.6';
+  addAgentMsg('好的，请告诉我需要修改哪项信息？你也可以直接重新开始。');
+  addQuickReplies(['重新录入此线索','修改客户名称','修改商机信息'], handleEditChoice);
+}
+
+function handleEditChoice(choice) {
+  addUserMsg(choice);
+  if (choice === '重新录入此线索') {
+    leadData = { customer:'', hasOpportunity:null, opportunityId:'', noReason:'', oppStage:'', oppAmount:'' };
+    currentStep = 0;
+    addTyping();
+    setTimeout(() => { removeTyping(); addAgentMsg('好的，请重新输入客户名称：'); }, 500);
+  } else if (choice === '修改客户名称') {
+    currentStep = 0;
+    addTyping();
+    setTimeout(() => { removeTyping(); addAgentMsg('请输入新的客户名称：'); }, 500);
+  } else {
+    currentStep = 1;
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('请重新选择是否有商机：');
+      addQuickReplies(['有商机','无商机'], handleOpportunityChoice);
+    }, 500);
+  }
+}
+
+function handleContinueChoice(choice) {
+  addUserMsg(choice);
+  if (choice === '继续反馈新线索') {
+    leadData = { customer:'', hasOpportunity:null, opportunityId:'', noReason:'', oppStage:'', oppAmount:'' };
+    currentStep = 0;
+    addTyping();
+    setTimeout(() => { removeTyping(); addAgentMsg('请输入下一个客户名称：'); }, 500);
+  } else if (choice === '查看已反馈列表') {
+    showLeadList();
+  } else {
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      addAgentMsg('今天的线索反馈已全部完成，辛苦了！如有需要随时找我。');
+    }, 500);
+  }
+}
+
+function showLeadList() {
+  if (allLeads.length === 0) {
+    addTyping();
+    setTimeout(() => { removeTyping(); addAgentMsg('暂时还没有已反馈的线索记录。'); }, 400);
+    return;
+  }
+  addTyping();
+  setTimeout(() => {
+    removeTyping();
+    let html = '今天共反馈 <strong>' + allLeads.length + '</strong> 条线索：<br><br>';
+    allLeads.forEach((l, i) => {
+      const status = l.hasOpportunity
+        ? '<span style="color:var(--color-success)">有商机</span> · ' + l.oppStage
+        : '<span style="color:var(--color-danger)">无商机</span> · ' + l.noReason;
+      html += '<div style="padding:8px 0;border-bottom:1px solid var(--color-border);font-size:14px;">'
+        + '<div style="font-weight:600;">' + (i+1) + '. ' + l.customer + ' <span style="font-size:11px;color:var(--color-text-muted);font-weight:400;">' + l.refId + '</span></div>'
+        + '<div style="font-size:13px;color:var(--color-text-muted);margin-top:2px;">' + status + ' · ' + l.time + '</div></div>';
+    });
+    addAgentMsg(html);
+    addQuickReplies(['继续反馈新线索','暂时没有了'], handleContinueChoice);
+  }, 600);
+}
+
+inputField.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } });
+inputField.addEventListener('focus', () => { setTimeout(scrollBottom, 300); });
+</script>
+</body>
+</html>
