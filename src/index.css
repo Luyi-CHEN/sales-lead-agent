@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* === Core Palette === */
+    --background: 0 0% 97.5%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary Blue — professional, trustworthy */
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary — subtle backgrounds */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted — labels, meta info */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent — interactive highlights */
+    --accent: 221 83% 96%;
+    --accent-foreground: 221 83% 40%;
+
+    /* Status colors */
+    --success: 152 69% 41%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 152 69% 95%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 92% 95%;
+
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 221 83% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+
+    /* Radius */
+    --radius: 0.75rem;
+
+    /* === Custom Tokens === */
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 63%));
+    --gradient-header: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
+    --gradient-card-hover: linear-gradient(135deg, hsl(221 83% 97%), hsl(221 83% 94%));
+
+    --shadow-card: 0 1px 3px 0 hsl(220 13% 91% / 0.5), 0 1px 2px -1px hsl(220 13% 91% / 0.5);
+    --shadow-card-hover: 0 4px 12px -2px hsl(221 83% 53% / 0.12), 0 2px 6px -2px hsl(221 83% 53% / 0.08);
+    --shadow-elevated: 0 8px 24px -4px hsl(220 13% 20% / 0.12), 0 4px 8px -4px hsl(220 13% 20% / 0.06);
+    --shadow-bottom-bar: 0 -1px 3px 0 hsl(220 13% 20% / 0.06);
+
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-size: 18px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Hide scrollbar but keep scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Status badge variants */
+  .badge-new {
+    @apply bg-info-muted text-accent-foreground;
+  }
+  .badge-processing {
+    @apply bg-warning-muted;
+    color: hsl(var(--warning));
+  }
+  .badge-done {
+    @apply bg-success-muted;
+    color: hsl(var(--success));
+  }
+
+  /* Mobile-optimized touch target */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Bottom safe area padding */
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  }
+
+  /* Card press effect */
+  .card-press {
+    transition: var(--transition-fast);
+  }
+  .card-press:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  /* Dot indicator animation */
+  .dot-pulse {
+    @apply w-2 h-2 rounded-full bg-destructive animate-pulse-dot;
+  }
+
+  /* Toast styling */
+  .toast-container {
+    @apply fixed top-12 left-1/2 -translate-x-1/2 z-50;
+  }
+
+  .toast-item {
+    @apply px-5 py-3 rounded-xl text-sm font-medium;
+    @apply animate-scale-in;
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .toast-success {
+    @apply bg-success text-success-foreground;
+  }
+
+  .toast-error {
+    @apply bg-destructive text-destructive-foreground;
+  }
+
+  .toast-info {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Bottom sheet overlay */
+  .sheet-overlay {
+    @apply fixed inset-0 z-40;
+    background: hsl(220 13% 20% / 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+}
