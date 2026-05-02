@@ -1,0 +1,8 @@
+node_modules/
+.vercel/
+.vercel-tmp/
+dist/
+*.tsbuildinfo
+qrcode.png
+review_diff.txt
+.analytics-data/
