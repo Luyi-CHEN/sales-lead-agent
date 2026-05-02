@@ -10,6 +10,24 @@ import {
   Link2, XCircle, PlusCircle, ExternalLink, Share2,
   Banknote, Calendar, Layers, Globe
 } from 'lucide-react'
+// Phone number masking — prototype demo only, prevent testers from calling real contacts
+function maskPhone(phone: string): string {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 11) {
+    // Mobile: 138****1234
+    return digits.slice(0, 3) + '****' + digits.slice(7)
+  }
+  if (digits.length >= 7) {
+    // Landline: keep first 3 & last 2, mask middle
+    const head = digits.slice(0, 3)
+    const tail = digits.slice(-2)
+    const mid = '*'.repeat(digits.length - 5)
+    return head + mid + tail
+  }
+  return phone  // too short to mask
+}
+
 import { LinkOpportunitySheet } from '@/components/bid/LinkOpportunitySheet'
 import { NoOpportunitySheet } from '@/components/bid/NoOpportunitySheet'
 import { CreateOpportunitySheet } from '@/components/bid/CreateOpportunitySheet'
@@ -165,13 +183,17 @@ export function DetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">{bid.contactPerson || '未公示'}</p>
-                  <p className="text-xs text-muted-foreground">{bid.contactPhone || '未公示'}</p>
+                  <p className="text-xs text-muted-foreground">{maskPhone(bid.contactPhone) || '未公示'}</p>
                 </div>
               </div>
               {bid.contactPhone && (
                 <a
-                  href={`tel:${bid.contactPhone}`}
+                  href="#"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-success-foreground"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    window.alert(`原型演示模式\n\n拨号号码（已脱敏）：${maskPhone(bid.contactPhone)}`)
+                  }}
                 >
                   <Phone className="h-4 w-4" />
                 </a>

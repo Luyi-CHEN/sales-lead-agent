@@ -3,10 +3,10 @@ import { useAnalytics, type ChatLogEntry, type ClickPathEntry } from '@/store/an
 import {
   MessageSquare, MousePointerClick, Download, Trash2,
   BarChart3, Filter,
-  TrendingUp, Hash, Zap, Search,
+  TrendingUp, Hash, Zap, Search, Users, GitBranch,
 } from 'lucide-react'
 
-type TabKey = 'chat' | 'clicks'
+type TabKey = 'users' | 'chat' | 'clicks'
 type SortKey = 'time' | 'intent' | 'session'
 
 export function AnalyticsPage() {
@@ -17,7 +17,7 @@ export function AnalyticsPage() {
     fetchServerData,
   } = useAnalytics()
 
-  const [activeTab, setActiveTab] = useState<TabKey>('chat')
+  const [activeTab, setActiveTab] = useState<TabKey>('users')
   const [chatLogs, setChatLogs] = useState<ChatLogEntry[]>([])
   const [clickPaths, setClickPaths] = useState<ClickPathEntry[]>([])
   const [chatSearch, setChatSearch] = useState('')
@@ -78,7 +78,6 @@ export function AnalyticsPage() {
     return paths.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   }, [clickPaths, clickSearch])
 
-  // Feature usage ranking (by description)
   const featureRanking = useMemo(() => {
     const map: Record<string, { count: number; category: string }> = {}
     for (const p of clickPaths) {
@@ -91,7 +90,6 @@ export function AnalyticsPage() {
       .map(([desc, { count, category }]) => ({ desc, count, category, pct: clickPaths.length ? Math.round(count / clickPaths.length * 100) : 0 }))
   }, [clickPaths])
 
-  // Category distribution
   const categoryStats = useMemo(() => {
     const map: Record<string, number> = {}
     for (const p of clickPaths) {
@@ -102,7 +100,6 @@ export function AnalyticsPage() {
       .map(([cat, count]) => ({ cat, count, pct: clickPaths.length ? Math.round(count / clickPaths.length * 100) : 0 }))
   }, [clickPaths])
 
-  // Page distribution
   const pageStats = useMemo(() => {
     const map: Record<string, number> = {}
     for (const p of clickPaths) {
@@ -113,7 +110,15 @@ export function AnalyticsPage() {
       .map(([page, count]) => ({ page, count, pct: clickPaths.length ? Math.round(count / clickPaths.length * 100) : 0 }))
   }, [clickPaths])
 
-  const sessionIds = useMemo(() => {
+  // Unique users / sessions counts
+  const uniqueUsers = useMemo(() => {
+    const set = new Set<string>()
+    for (const l of chatLogs) if (l.userId) set.add(l.userId)
+    for (const p of clickPaths) if (p.userId) set.add(p.userId)
+    return set.size
+  }, [chatLogs, clickPaths])
+
+  const sessionCount = useMemo(() => {
     const set = new Set<string>()
     for (const l of chatLogs) set.add(l.sessionId)
     for (const p of clickPaths) set.add(p.sessionId)
@@ -171,9 +176,10 @@ export function AnalyticsPage() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 20, fontSize: 13 }}>
+                <StatBadge icon={<Users size={14} />} label="独立用户" value={uniqueUsers} />
+                <StatBadge icon={<Hash size={14} />} label="独立会话" value={sessionCount} />
                 <StatBadge icon={<MessageSquare size={14} />} label="对话记录" value={chatLogs.length} />
                 <StatBadge icon={<MousePointerClick size={14} />} label="点击事件" value={clickPaths.length} />
-                <StatBadge icon={<Hash size={14} />} label="独立会话" value={sessionIds} />
               </div>
             </div>
           </div>
@@ -182,6 +188,13 @@ export function AnalyticsPage() {
         {/* Tab Bar */}
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 32px' }}>
           <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', marginTop: 0 }}>
+            <TabButton
+              active={activeTab === 'users'}
+              onClick={() => setActiveTab('users')}
+              icon={<GitBranch size={15} />}
+              label="用户行为链路"
+              count={uniqueUsers}
+            />
             <TabButton
               active={activeTab === 'chat'}
               onClick={() => setActiveTab('chat')}
@@ -201,7 +214,15 @@ export function AnalyticsPage() {
 
         {/* Content */}
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '24px 32px' }}>
-          {activeTab === 'chat' ? (
+          {activeTab === 'users' ? (
+            <UserBehaviorPanel
+              chatLogs={chatLogs}
+              clickPaths={clickPaths}
+              formatTime={formatTime}
+              expandedSessions={expandedSessions}
+              toggleSession={toggleSession}
+            />
+          ) : activeTab === 'chat' ? (
             <ChatAnalyticsPanel
               logs={filteredChatLogs}
               intentStats={intentStats}
@@ -233,6 +254,447 @@ export function AnalyticsPage() {
     </div>
   )
 }
+
+// ===== User Behavior Chain Panel =====
+
+interface UserSessionData {
+  userId: string
+  sessions: {
+    sessionId: string
+    startTime: string
+    endTime: string
+    chatCount: number
+    clickCount: number
+    detailEntries: { source: string; bidName: string; timestamp: string }[]
+    events: { type: 'chat' | 'click'; timestamp: string; description: string; detail?: string; intent?: string }[]
+  }[]
+}
+
+function buildUserSessions(chatLogs: ChatLogEntry[], clickPaths: ClickPathEntry[]): UserSessionData[] {
+  // Collect all userIds
+  const userMap = new Map<string, Map<string, { chats: ChatLogEntry[]; clicks: ClickPathEntry[] }>>()
+
+  for (const c of chatLogs) {
+    const uid = c.userId || 'unknown'
+    if (!userMap.has(uid)) userMap.set(uid, new Map())
+    const sessions = userMap.get(uid)!
+    if (!sessions.has(c.sessionId)) sessions.set(c.sessionId, { chats: [], clicks: [] })
+    sessions.get(c.sessionId)!.chats.push(c)
+  }
+
+  for (const p of clickPaths) {
+    const uid = p.userId || 'unknown'
+    if (!userMap.has(uid)) userMap.set(uid, new Map())
+    const sessions = userMap.get(uid)!
+    if (!sessions.has(p.sessionId)) sessions.set(p.sessionId, { chats: [], clicks: [] })
+    sessions.get(p.sessionId)!.clicks.push(p)
+  }
+
+  const result: UserSessionData[] = []
+
+  for (const [userId, sessions] of userMap) {
+    const userSessions: UserSessionData['sessions'] = []
+
+    for (const [sessionId, data] of sessions) {
+      // Build unified event timeline
+      const events: UserSessionData['sessions'][0]['events'] = []
+
+      for (const c of data.chats) {
+        events.push({
+          type: 'chat',
+          timestamp: c.timestamp,
+          description: c.userInput,
+          detail: c.systemResponse.slice(0, 80),
+          intent: c.detectedIntent,
+        })
+      }
+
+      for (const p of data.clicks) {
+        events.push({
+          type: 'click',
+          timestamp: p.timestamp,
+          description: p.description,
+          detail: p.detail,
+        })
+      }
+
+      events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+      // Extract detail page entries with their source
+      const detailEntries: UserSessionData['sessions'][0]['detailEntries'] = []
+      for (const p of data.clicks) {
+        if (p.description === '从对话列表查看标讯' || p.description === '从对话中查看标讯提醒') {
+          detailEntries.push({ source: '对话列表', bidName: p.detail || '', timestamp: p.timestamp })
+        } else if (p.description === '查看标讯详情') {
+          detailEntries.push({ source: '标讯列表', bidName: p.detail || '', timestamp: p.timestamp })
+        }
+      }
+
+      const allTimes = events.map(e => new Date(e.timestamp).getTime())
+      const startTime = allTimes.length ? new Date(Math.min(...allTimes)).toISOString() : ''
+      const endTime = allTimes.length ? new Date(Math.max(...allTimes)).toISOString() : ''
+
+      userSessions.push({
+        sessionId,
+        startTime,
+        endTime,
+        chatCount: data.chats.length,
+        clickCount: data.clicks.length,
+        detailEntries,
+        events,
+      })
+    }
+
+    // Sort sessions by start time descending
+    userSessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
+
+    result.push({ userId, sessions: userSessions })
+  }
+
+  // Sort users by latest activity
+  result.sort((a, b) => {
+    const aTime = a.sessions[0]?.startTime || ''
+    const bTime = b.sessions[0]?.startTime || ''
+    return bTime.localeCompare(aTime)
+  })
+
+  return result
+}
+
+function UserBehaviorPanel({ chatLogs, clickPaths, formatTime, expandedSessions, toggleSession }: {
+  chatLogs: ChatLogEntry[]
+  clickPaths: ClickPathEntry[]
+  formatTime: (iso: string) => string
+  expandedSessions: Set<string>
+  toggleSession: (sid: string) => void
+}) {
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+
+  const userSessions = useMemo(() => buildUserSessions(chatLogs, clickPaths), [chatLogs, clickPaths])
+
+  // Auto-select first user
+  useEffect(() => {
+    if (!selectedUser && userSessions.length > 0) {
+      setSelectedUser(userSessions[0].userId)
+    }
+  }, [userSessions, selectedUser])
+
+  const activeUser = userSessions.find(u => u.userId === selectedUser)
+
+  // Summary stats for selected user
+  const userSummary = useMemo(() => {
+    if (!activeUser) return null
+    const totalChats = activeUser.sessions.reduce((s, sess) => s + sess.chatCount, 0)
+    const totalClicks = activeUser.sessions.reduce((s, sess) => s + sess.clickCount, 0)
+    const totalDetailEntries = activeUser.sessions.reduce((s, sess) => s + sess.detailEntries.length, 0)
+    const fromChat = activeUser.sessions.reduce((s, sess) => s + sess.detailEntries.filter(d => d.source === '对话列表').length, 0)
+    const fromList = activeUser.sessions.reduce((s, sess) => s + sess.detailEntries.filter(d => d.source === '标讯列表').length, 0)
+    return { totalChats, totalClicks, totalDetailEntries, fromChat, fromList, sessionCount: activeUser.sessions.length }
+  }, [activeUser])
+
+  // Entry source ranking across all users
+  const entrySourceStats = useMemo(() => {
+    let fromChat = 0
+    let fromList = 0
+    for (const u of userSessions) {
+      for (const s of u.sessions) {
+        for (const d of s.detailEntries) {
+          if (d.source === '对话列表') fromChat++
+          else fromList++
+        }
+      }
+    }
+    const total = fromChat + fromList
+    return { fromChat, fromList, total }
+  }, [userSessions])
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
+      {/* Left: User list */}
+      <div>
+        <div style={{
+          background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
+          overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{
+            padding: '14px 16px', fontSize: 13, fontWeight: 600, color: '#1e293b',
+            borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <Users size={15} style={{ color: '#6366f1' }} />
+            用户列表 ({userSessions.length})
+          </div>
+          <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+            {userSessions.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                暂无用户数据
+              </div>
+            ) : (
+              userSessions.map((u, i) => {
+                const isActive = selectedUser === u.userId
+                const totalEvents = u.sessions.reduce((s, sess) => s + sess.chatCount + sess.clickCount, 0)
+                const totalDetails = u.sessions.reduce((s, sess) => s + sess.detailEntries.length, 0)
+                return (
+                  <div
+                    key={u.userId}
+                    onClick={() => setSelectedUser(u.userId)}
+                    style={{
+                      padding: '12px 16px', cursor: 'pointer',
+                      background: isActive ? '#eff6ff' : 'transparent',
+                      borderLeft: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                      borderBottom: '1px solid #f8fafc',
+                      transition: 'all 0.1s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          width: 28, height: 28, borderRadius: '50%',
+                          background: USER_COLORS[i % USER_COLORS.length],
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontSize: 11, fontWeight: 700,
+                        }}>
+                          {`U${i + 1}`}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>
+                            用户 {i + 1}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
+                            {u.userId.slice(0, 16)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8, fontSize: 11, color: '#64748b' }}>
+                      <span>{u.sessions.length} 会话</span>
+                      <span>·</span>
+                      <span>{totalEvents} 事件</span>
+                      <span>·</span>
+                      <span>{totalDetails} 次进详情</span>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Entry source overview */}
+        <div style={{
+          background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
+          padding: 16, marginTop: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <TrendingUp size={14} style={{ color: '#10b981' }} />
+            进入详情页来源（全局）
+          </div>
+          {entrySourceStats.total === 0 ? (
+            <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', padding: 12 }}>暂无数据</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <SourceBar label="💬 对话列表" count={entrySourceStats.fromChat} total={entrySourceStats.total} color="#6366f1" />
+              <SourceBar label="📋 标讯列表" count={entrySourceStats.fromList} total={entrySourceStats.total} color="#2563eb" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right: Session detail */}
+      <div>
+        {!activeUser ? (
+          <div style={{
+            background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
+            padding: 64, textAlign: 'center', color: '#94a3b8', fontSize: 14,
+          }}>
+            请在左侧选择一个用户查看行为链路
+          </div>
+        ) : (
+          <>
+            {/* User summary cards */}
+            {userSummary && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
+                <SummaryCard label="会话数" value={userSummary.sessionCount} icon="📊" />
+                <SummaryCard label="对话次数" value={userSummary.totalChats} icon="💬" />
+                <SummaryCard label="点击次数" value={userSummary.totalClicks} icon="👆" />
+                <SummaryCard label="从对话进详情" value={userSummary.fromChat} icon="🔗" color="#6366f1" />
+                <SummaryCard label="从列表进详情" value={userSummary.fromList} icon="📋" color="#2563eb" />
+              </div>
+            )}
+
+            {/* Sessions */}
+            {activeUser.sessions.map((sess, si) => {
+              const isExpanded = expandedSessions.has(sess.sessionId)
+              return (
+                <div key={sess.sessionId} style={{
+                  background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
+                  marginBottom: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                  {/* Session header */}
+                  <div
+                    onClick={() => toggleSession(sess.sessionId)}
+                    style={{
+                      padding: '14px 20px', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: isExpanded ? '#f8fafc' : 'transparent',
+                      borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{
+                        fontSize: 16, transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.15s', display: 'inline-block',
+                      }}>▶</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+                          会话 {si + 1}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                          {formatTime(sess.startTime)} ~ {formatTime(sess.endTime)}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
+                      <span>💬 {sess.chatCount} 对话</span>
+                      <span>👆 {sess.clickCount} 点击</span>
+                      <span style={{ color: '#6366f1', fontWeight: 600 }}>📄 {sess.detailEntries.length} 次进详情</span>
+                    </div>
+                  </div>
+
+                  {/* Session detail: behavior chain */}
+                  {isExpanded && (
+                    <div style={{ padding: '16px 20px' }}>
+                      {/* Detail page entry summary */}
+                      {sess.detailEntries.length > 0 && (
+                        <div style={{
+                          background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+                          border: '1px solid #e2e8f0',
+                        }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                            📄 进入标讯详情页路径
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sess.detailEntries.map((d, di) => (
+                              <div key={di} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                                <span style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: 11, flexShrink: 0, width: 60 }}>
+                                  {new Date(d.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                                  background: d.source === '对话列表' ? '#ede9fe' : '#dbeafe',
+                                  color: d.source === '对话列表' ? '#6366f1' : '#2563eb',
+                                  flexShrink: 0,
+                                }}>
+                                  {d.source === '对话列表' ? '💬 对话列表' : '📋 标讯列表'}
+                                </span>
+                                <span style={{ fontSize: 11, color: '#1e293b' }}>→</span>
+                                <span style={{ fontSize: 12, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {d.bidName || '标讯详情'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Full event timeline */}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                        🕐 完整行为时间线 ({sess.events.length} 个事件)
+                      </div>
+                      <div style={{ position: 'relative', paddingLeft: 20 }}>
+                        {/* Timeline line */}
+                        <div style={{
+                          position: 'absolute', left: 7, top: 8, bottom: 8,
+                          width: 2, background: '#e2e8f0',
+                        }} />
+                        {sess.events.map((evt, ei) => (
+                          <div key={ei} style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 8,
+                            position: 'relative',
+                          }}>
+                            {/* Dot */}
+                            <div style={{
+                              position: 'absolute', left: -16,
+                              width: 12, height: 12, borderRadius: '50%',
+                              background: evt.type === 'chat' ? '#f59e0b' : '#2563eb',
+                              border: '2px solid #fff', boxShadow: '0 0 0 1px #e2e8f0',
+                              marginTop: 2, flexShrink: 0,
+                            }} />
+                            {/* Content */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: 11, flexShrink: 0 }}>
+                                  {new Date(evt.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </span>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3,
+                                  background: evt.type === 'chat' ? '#fef3c7' : '#dbeafe',
+                                  color: evt.type === 'chat' ? '#d97706' : '#2563eb',
+                                }}>
+                                  {evt.type === 'chat' ? '对话' : '点击'}
+                                </span>
+                                {evt.intent && (
+                                  <IntentBadge intent={evt.intent} />
+                                )}
+                              </div>
+                              <div style={{ fontSize: 13, color: '#1e293b', marginTop: 2, lineHeight: 1.4 }}>
+                                {evt.description}
+                              </div>
+                              {evt.detail && (
+                                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {evt.detail}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SummaryCard({ label, value, icon, color }: { label: string; value: number; icon: string; color?: string }) {
+  return (
+    <div style={{
+      background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0',
+      padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    }}>
+      <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: color || '#1e293b', lineHeight: 1 }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{label}</div>
+    </div>
+  )
+}
+
+function SourceBar({ label, count, total, color }: { label: string; count: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.round(count / total * 100) : 0
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+        <span style={{ fontWeight: 500, color: '#334155' }}>{label}</span>
+        <span style={{ color: '#94a3b8' }}>{count} ({pct}%)</span>
+      </div>
+      <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 3, background: color,
+          width: `${Math.max(pct, 2)}%`, transition: 'width 0.3s ease',
+        }} />
+      </div>
+    </div>
+  )
+}
+
+const USER_COLORS = ['#6366f1', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#d97706']
 
 // ===== Sub Components =====
 
@@ -478,28 +940,18 @@ function ChatAnalyticsPanel({ logs, intentStats, chatSearch, setChatSearch, chat
   )
 }
 
-// ===== Click Analytics Panel (Business-Friendly) =====
+// ===== Click Analytics Panel =====
 
 const categoryColorMap: Record<string, string> = {
-  '导航': '#8b5cf6',
-  '标讯浏览': '#2563eb',
-  '商机处理': '#10b981',
-  '筛选': '#06b6d4',
-  '对话交互': '#f59e0b',
-  '标讯操作': '#ec4899',
-  '搜索': '#6366f1',
-  '其他': '#94a3b8',
+  '导航': '#8b5cf6', '标讯浏览': '#2563eb', '商机处理': '#10b981',
+  '筛选': '#06b6d4', '对话交互': '#f59e0b', '标讯操作': '#ec4899',
+  '搜索': '#6366f1', '其他': '#94a3b8',
 }
 
 const categoryIconMap: Record<string, string> = {
-  '导航': '🧭',
-  '标讯浏览': '📋',
-  '商机处理': '💼',
-  '筛选': '🔍',
-  '对话交互': '💬',
-  '标讯操作': '⚡',
-  '搜索': '🔎',
-  '其他': '📌',
+  '导航': '🧭', '标讯浏览': '📋', '商机处理': '💼',
+  '筛选': '🔍', '对话交互': '💬', '标讯操作': '⚡',
+  '搜索': '🔎', '其他': '📌',
 }
 
 function CategoryBadge({ category }: { category: string }) {
@@ -508,11 +960,9 @@ function CategoryBadge({ category }: { category: string }) {
   return (
     <span style={{
       fontSize: 11, fontWeight: 600,
-      background: color + '15',
-      color: color,
+      background: color + '15', color: color,
       borderRadius: 6, padding: '3px 10px',
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
     }}>
       <span style={{ fontSize: 12 }}>{icon}</span>
       {category}
@@ -531,9 +981,8 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
 }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
-      {/* Left: User action timeline */}
+      {/* Left: Timeline table */}
       <div>
-        {/* Toolbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           marginBottom: 16, gap: 12, flexWrap: 'wrap',
@@ -561,7 +1010,6 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
           </div>
         </div>
 
-        {/* Timeline table */}
         <div style={{
           background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
           overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -608,12 +1056,8 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
                       </div>
                     )}
                   </div>
-                  <span>
-                    <CategoryBadge category={p.category} />
-                  </span>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>
-                    {p.page}
-                  </span>
+                  <span><CategoryBadge category={p.category} /></span>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>{p.page}</span>
                 </div>
               ))
             )}
@@ -623,7 +1067,6 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
 
       {/* Right: Stats sidebar */}
       <div>
-        {/* Feature usage ranking */}
         <div style={{
           background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
           padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -644,15 +1087,9 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
                     color: i < 3 ? '#fff' : '#64748b',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, fontWeight: 700, flexShrink: 0,
-                  }}>
-                    {i + 1}
-                  </span>
-                  <span style={{ fontSize: 13, flexShrink: 0, opacity: 0.7 }}>
-                    {categoryIconMap[category] || '📌'}
-                  </span>
-                  <span style={{ flex: 1, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {desc}
-                  </span>
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, flexShrink: 0, opacity: 0.7 }}>{categoryIconMap[category] || '📌'}</span>
+                  <span style={{ flex: 1, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{desc}</span>
                   <span style={{ color: '#94a3b8', fontSize: 11, flexShrink: 0 }}>{count}次</span>
                 </div>
               ))}
@@ -660,7 +1097,6 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
           )}
         </div>
 
-        {/* Category distribution */}
         <div style={{
           background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
           padding: 20, marginTop: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -686,10 +1122,8 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
                     </div>
                     <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{
-                        height: '100%', borderRadius: 3,
-                        background: color,
-                        width: `${Math.max(pct, 2)}%`,
-                        transition: 'width 0.3s ease',
+                        height: '100%', borderRadius: 3, background: color,
+                        width: `${Math.max(pct, 2)}%`, transition: 'width 0.3s ease',
                       }} />
                     </div>
                   </div>
@@ -699,7 +1133,6 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
           )}
         </div>
 
-        {/* Page activity */}
         <div style={{
           background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0',
           padding: 20, marginTop: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -720,10 +1153,8 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
                   </div>
                   <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{
-                      height: '100%', borderRadius: 3,
-                      background: '#10b981',
-                      width: `${Math.max(pct, 2)}%`,
-                      transition: 'width 0.3s ease',
+                      height: '100%', borderRadius: 3, background: '#10b981',
+                      width: `${Math.max(pct, 2)}%`, transition: 'width 0.3s ease',
                     }} />
                   </div>
                 </div>
@@ -765,8 +1196,7 @@ function IntentBadge({ intent }: { intent: string }) {
   return (
     <span style={{
       fontSize: 11, fontWeight: 600,
-      background: color + '18',
-      color: color,
+      background: color + '18', color: color,
       borderRadius: 4, padding: '2px 8px',
       display: 'inline-block', whiteSpace: 'nowrap',
     }}>
@@ -787,33 +1217,17 @@ function InsightRow({ label, value, warn }: { label: string; value: string; warn
 // ===== Constants =====
 
 const intentNameMap: Record<string, string> = {
-  greeting: '问候',
-  thanks: '感谢',
-  help: '帮助/能力',
-  statistics: '统计概况',
-  filter_region: '区域筛选',
-  filter_industry: '行业筛选',
-  filter_budget: '预算筛选',
-  view_all: '查看全部',
-  view_pending: '查看待处理',
-  view_opportunities: '商机关联',
-  keyword_search: '关键词搜索',
-  fallback: '未识别',
-  unknown: '未知',
+  greeting: '问候', thanks: '感谢', help: '帮助/能力',
+  statistics: '统计概况', filter_region: '区域筛选', filter_industry: '行业筛选',
+  filter_budget: '预算筛选', view_all: '查看全部', view_pending: '查看待处理',
+  view_opportunities: '商机关联', keyword_search: '关键词搜索',
+  fallback: '未识别', unknown: '未知',
 }
 
 const intentColorMap: Record<string, string> = {
-  greeting: '#10b981',
-  thanks: '#6366f1',
-  help: '#8b5cf6',
-  statistics: '#2563eb',
-  filter_region: '#0891b2',
-  filter_industry: '#0d9488',
-  filter_budget: '#d97706',
-  view_all: '#2563eb',
-  view_pending: '#ea580c',
-  view_opportunities: '#059669',
-  keyword_search: '#7c3aed',
-  fallback: '#ef4444',
-  unknown: '#94a3b8',
+  greeting: '#10b981', thanks: '#6366f1', help: '#8b5cf6',
+  statistics: '#2563eb', filter_region: '#0891b2', filter_industry: '#0d9488',
+  filter_budget: '#d97706', view_all: '#2563eb', view_pending: '#ea580c',
+  view_opportunities: '#059669', keyword_search: '#7c3aed',
+  fallback: '#ef4444', unknown: '#94a3b8',
 }

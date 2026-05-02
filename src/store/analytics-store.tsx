@@ -10,6 +10,7 @@ export interface ChatLogEntry {
   detectedIntent: string
   responseType: string // text, bid-list, quick-actions, bid-alert
   sessionId: string
+  userId: string
 }
 
 export interface ClickPathEntry {
@@ -20,11 +21,12 @@ export interface ClickPathEntry {
   page: string          // Current page in Chinese: 首页-助手, 首页-标讯列表, 标讯详情
   detail?: string       // Extra context (e.g., bid name, filter value)
   sessionId: string
+  userId: string
 }
 
 interface AnalyticsState {
-  logChat: (entry: Omit<ChatLogEntry, 'id' | 'timestamp' | 'sessionId'>) => void
-  logClick: (entry: Omit<ClickPathEntry, 'id' | 'timestamp' | 'sessionId'>) => void
+  logChat: (entry: Omit<ChatLogEntry, 'id' | 'timestamp' | 'sessionId' | 'userId'>) => void
+  logClick: (entry: Omit<ClickPathEntry, 'id' | 'timestamp' | 'sessionId' | 'userId'>) => void
   getChatLogs: () => ChatLogEntry[]
   getClickPaths: () => ClickPathEntry[]
   clearChatLogs: () => void
@@ -33,6 +35,7 @@ interface AnalyticsState {
   exportClickPathsCSV: () => string
   fetchServerData: () => Promise<void>
   sessionId: string
+  userId: string
 }
 
 const CHAT_LOG_KEY = 'sales_analytics_chat_logs'
@@ -52,6 +55,16 @@ function getSessionId(): string {
     sessionStorage.setItem('analytics_session_id', sid)
   }
   return sid
+}
+
+// Persistent user ID — survives browser close, stored in localStorage
+function getUserId(): string {
+  let uid = localStorage.getItem('analytics_user_id')
+  if (!uid) {
+    uid = `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+    localStorage.setItem('analytics_user_id', uid)
+  }
+  return uid
 }
 
 function readFromStorage<T>(key: string): T[] {
@@ -151,6 +164,7 @@ export function useAnalytics() {
 
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const sessionId = useRef(getSessionId()).current
+  const userId = useRef(getUserId()).current
   const chatLogsRef = useRef<ChatLogEntry[]>(readFromStorage(CHAT_LOG_KEY))
   const clickPathsRef = useRef<ClickPathEntry[]>(readFromStorage(CLICK_PATH_KEY))
 
@@ -173,31 +187,33 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval)
   }, [])
 
-  const logChat = useCallback((entry: Omit<ChatLogEntry, 'id' | 'timestamp' | 'sessionId'>) => {
+  const logChat = useCallback((entry: Omit<ChatLogEntry, 'id' | 'timestamp' | 'sessionId' | 'userId'>) => {
     const record: ChatLogEntry = {
       ...entry,
       id: generateId(),
       timestamp: new Date().toISOString(),
       sessionId,
+      userId,
     }
     chatLogsRef.current = [...chatLogsRef.current, record]
     writeToStorage(CHAT_LOG_KEY, chatLogsRef.current, MAX_ENTRIES)
     // Sync to server (fire-and-forget)
     postToServer('/chat', record)
-  }, [sessionId])
+  }, [sessionId, userId])
 
-  const logClick = useCallback((entry: Omit<ClickPathEntry, 'id' | 'timestamp' | 'sessionId'>) => {
+  const logClick = useCallback((entry: Omit<ClickPathEntry, 'id' | 'timestamp' | 'sessionId' | 'userId'>) => {
     const record: ClickPathEntry = {
       ...entry,
       id: generateId(),
       timestamp: new Date().toISOString(),
       sessionId,
+      userId,
     }
     clickPathsRef.current = [...clickPathsRef.current, record]
     writeToStorage(CLICK_PATH_KEY, clickPathsRef.current, MAX_ENTRIES)
     // Sync to server (fire-and-forget)
     postToServer('/clicks', record)
-  }, [sessionId])
+  }, [sessionId, userId])
 
   const getChatLogs = useCallback(() => chatLogsRef.current, [])
   const getClickPaths = useCallback(() => clickPathsRef.current, [])
@@ -225,9 +241,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const exportChatLogsCSV = useCallback(() => {
-    const headers = ['ID', 'Timestamp', 'SessionID', 'UserInput', 'SystemResponse', 'DetectedIntent', 'ResponseType']
+    const headers = ['ID', 'Timestamp', 'UserID', 'SessionID', 'UserInput', 'SystemResponse', 'DetectedIntent', 'ResponseType']
     const rows = chatLogsRef.current.map(e => [
-      e.id, e.timestamp, e.sessionId,
+      e.id, e.timestamp, e.userId || '', e.sessionId,
       escapeCSV(e.userInput), escapeCSV(e.systemResponse),
       escapeCSV(e.detectedIntent), e.responseType,
     ].join(','))
@@ -235,9 +251,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const exportClickPathsCSV = useCallback(() => {
-    const headers = ['ID', 'Timestamp', 'SessionID', 'Description', 'Category', 'Page', 'Detail']
+    const headers = ['ID', 'Timestamp', 'UserID', 'SessionID', 'Description', 'Category', 'Page', 'Detail']
     const rows = clickPathsRef.current.map(e => [
-      e.id, e.timestamp, e.sessionId,
+      e.id, e.timestamp, e.userId || '', e.sessionId,
       escapeCSV(e.description), escapeCSV(e.category),
       escapeCSV(e.page), escapeCSV(e.detail || ''),
     ].join(','))
@@ -253,6 +269,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         exportChatLogsCSV, exportClickPathsCSV,
         fetchServerData,
         sessionId,
+        userId,
       }}
     >
       {children}
