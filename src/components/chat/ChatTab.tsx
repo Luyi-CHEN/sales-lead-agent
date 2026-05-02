@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Send, Sparkles, Link2, MapPin, ChevronRight, Clock, Banknote } from 'lucide-react'
 import { useAppState } from '@/store/app-store'
+import { useAnalytics } from '@/store/analytics-store'
 import { type BidInfo, industryColors } from '@/data/mock-data'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,7 @@ interface Message {
 export function ChatTab() {
   const navigate = useNavigate()
   const { bids, unreadCount } = useAppState()
+  const { logChat, logClick } = useAnalytics()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -111,6 +113,14 @@ export function ChatTab() {
   const handleAction = (action: string) => {
     const pendingBids = bids.filter(b => b.status === 'pending')
 
+    // Log quick action click
+    logClick({
+      description: `点击快捷操作「${action}」`,
+      category: '对话交互',
+      page: '首页-助手',
+      detail: action,
+    })
+
     switch (action) {
       case 'view_latest':
         addMessage({ role: 'user', content: '查看最新标讯' })
@@ -194,6 +204,14 @@ export function ChatTab() {
     const t = text.toLowerCase()
     const intent = detectIntent(t, bids, unreadCount)
     simulateAgentReply(intent.content, intent.delay ?? 600, intent.extras)
+
+    // Log conversation for analytics
+    logChat({
+      userInput: text,
+      systemResponse: intent.content,
+      detectedIntent: intent.intentName || 'unknown',
+      responseType: intent.extras?.type || 'text',
+    })
   }
 
   const pendingBids = bids.filter(b => b.status === 'pending')
@@ -245,6 +263,8 @@ export function ChatTab() {
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
+            data-track="发送对话消息"
+            data-track-type="对话交互"
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200",
               inputValue.trim()
@@ -314,6 +334,8 @@ function ChatBidList({ allBids, initialFilter, onBidClick }: {
           <button
             key={f.key}
             onClick={() => setActiveFilter(f.key)}
+            data-track={`对话中筛选「${f.label}」`}
+            data-track-type="筛选"
             className={cn(
               'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200',
               activeFilter === f.key
@@ -340,6 +362,9 @@ function ChatBidList({ allBids, initialFilter, onBidClick }: {
               <button
                 key={bid.id}
                 onClick={() => onBidClick(bid.id)}
+                data-track="从对话列表查看标讯"
+                data-track-type="标讯浏览"
+                data-track-detail={bid.projectName}
                 className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left active:bg-accent transition-colors duration-150 relative"
               >
                 {/* Unread dot */}
@@ -441,6 +466,9 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
             <button
               key={bid.id}
               onClick={() => onBidClick(bid.id)}
+              data-track="从对话中查看标讯提醒"
+              data-track-type="标讯浏览"
+              data-track-detail={bid.projectName}
               className="card-press w-full rounded-xl border bg-card p-3 text-left"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
@@ -485,6 +513,8 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
               <button
                 key={act.action}
                 onClick={() => onAction(act.action)}
+                data-track={`点击快捷操作「${act.label}」`}
+                data-track-type="对话交互"
                 className="card-press rounded-full border border-primary/30 bg-accent px-3 py-1.5 text-xs font-medium text-primary transition-all active:bg-primary active:text-primary-foreground"
               >
                 {act.label}
@@ -541,6 +571,7 @@ type IntentResult = {
   content: string
   delay?: number
   extras?: Partial<Message>
+  intentName?: string
 }
 
 const REGIONS = ['江苏', '安徽', '天津', '川藏', '四川', '北京'] as const
@@ -557,6 +588,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 1. 问候 ---
   if (matchAny(text, ['你好', '您好', 'hello', 'hi', '嗨', '早上好', '下午好', '晚上好', '早'])) {
     return {
+      intentName: 'greeting',
       content: `你好！👋 当前有 **${pendingBids.length} 条标讯**待处理，其中 ${withOpps.length} 条可能关联商机。需要我帮你快速查看吗？`,
       delay: 500,
       extras: {
@@ -572,6 +604,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 2. 感谢 ---
   if (matchAny(text, ['谢谢', '感谢', '辛苦', '太好了', '不错', '棒', 'thanks', 'thx'])) {
     return {
+      intentName: 'thanks',
       content: '不客气！有任何需要随时告诉我 😊',
       delay: 400,
     }
@@ -580,6 +613,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 3. 帮助/能力 ---
   if (matchAny(text, ['帮助', '能做什么', '功能', '怎么用', '你能', '你会', '你可以', '有什么功能'])) {
     return {
+      intentName: 'help',
       content: '我可以帮你：\n\n📋 **查看标讯** — 浏览全部或筛选待处理标讯\n🔗 **关联商机** — 查看可能关联商机的标讯\n📊 **统计概况** — 了解当前标讯的区域、行业、预算分布\n🔍 **按条件筛选** — 按区域、行业或预算范围查找\n\n试试输入"江苏的标讯"或"预算超过500万"',
       delay: 600,
       extras: {
@@ -606,6 +640,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
     const industrySummary = Object.entries(industryMap).map(([i, c]) => `${i}(${c}条)`).join('、')
 
     return {
+      intentName: 'statistics',
       content: `📊 当前标讯概况：\n\n📋 待处理标讯：**${pendingBids.length} 条**\n🔗 可能关联商机：**${withOpps.length} 条**\n💰 总预算规模：**${totalBudget.toFixed(0)}万元**\n\n🗺️ 区域分布：${regionSummary}\n🏢 行业分布：${industrySummary}`,
       delay: 700,
       extras: {
@@ -627,12 +662,14 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
       const oppCount = regionBids.filter(b => b.relatedOpportunityCount > 0).length
       const oppHint = oppCount > 0 ? `，其中 ${oppCount} 条可能关联商机` : ''
       return {
+        intentName: 'filter_region',
         content: `📍 ${matchedRegion}区域共有 **${regionBids.length} 条**待处理标讯${oppHint}：`,
         delay: 600,
         extras: { type: 'bid-list', listFilter: 'all' },
       }
     }
     return {
+      intentName: 'filter_region',
       content: `📍 ${matchedRegion}区域暂无待处理标讯。要看看其他区域吗？`,
       delay: 500,
       extras: {
@@ -651,12 +688,14 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
     const industryBids = pendingBids.filter(b => b.industry === industryKey)
     if (industryBids.length > 0) {
       return {
+        intentName: 'filter_industry',
         content: `🏢 ${industryKey}行业共有 **${industryBids.length} 条**待处理标讯：`,
         delay: 600,
         extras: { type: 'bid-list', listFilter: 'all' },
       }
     }
     return {
+      intentName: 'filter_industry',
       content: `🏢 ${industryKey}行业暂无待处理标讯。`,
       delay: 500,
     }
@@ -675,6 +714,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
         `• **${b.projectName}** — ¥${b.budgetAmount}万（${b.region}·${b.industry}）`
       ).join('\n')
       return {
+        intentName: 'filter_budget',
         content: `💰 预算 ≥ ${threshold}万的标讯共 **${highBudget.length} 条**，Top项目：\n\n${topItems}`,
         delay: 700,
         extras: {
@@ -687,6 +727,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
       }
     }
     return {
+      intentName: 'filter_budget',
       content: `💰 没有找到预算 ≥ ${threshold}万的标讯。当前标讯预算范围较广，建议查看全部列表。`,
       delay: 500,
       extras: {
@@ -699,6 +740,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 8. 查看全部/列表 ---
   if (matchAny(text, ['全部', '列表', '所有', '看看', '都有啥', '有哪些', '都有什么'])) {
     return {
+      intentName: 'view_all',
       content: '以下是全部标讯，你可以切换筛选条件：',
       delay: 600,
       extras: { type: 'bid-list', listFilter: 'all' },
@@ -708,6 +750,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 9. 查看待处理/新标讯 ---
   if (matchAny(text, ['标讯', '新的', '待处理', '待办', '未处理', '没处理', '处理'])) {
     return {
+      intentName: 'view_pending',
       content: `当前有 **${unreadCount} 条**标讯待处理，需要我帮你逐条处理吗？`,
       delay: 700,
       extras: {
@@ -723,6 +766,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   // --- 10. 商机/关联 ---
   if (matchAny(text, ['商机', '关联', '匹配'])) {
     return {
+      intentName: 'view_opportunities',
       content: `已为你筛选可能关联商机的标讯（共 ${withOpps.length} 条）：`,
       delay: 700,
       extras: { type: 'bid-list', listFilter: 'with_opps' },
@@ -741,12 +785,14 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
     )
     if (matched.length > 0) {
       return {
+        intentName: 'keyword_search',
         content: `🔍 包含「${kw}」关键词的标讯共 **${matched.length} 条**：`,
         delay: 600,
         extras: { type: 'bid-list', listFilter: 'all' },
       }
     }
     return {
+      intentName: 'keyword_search',
       content: `🔍 暂未找到与「${kw}」相关的待处理标讯。`,
       delay: 500,
     }
@@ -754,6 +800,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
 
   // --- fallback ---
   return {
+    intentName: 'fallback',
     content: '收到！我目前可以帮你：\n\n• 查看/处理标讯（如"看看待处理的标讯"）\n• 按区域筛选（如"北京的标讯"）\n• 按预算筛选（如"预算超过500万"）\n• 查看统计概况（如"一共多少条"）\n• 查看关联商机（如"有商机的标讯"）\n\n请告诉我你需要什么帮助？',
     delay: 600,
     extras: {

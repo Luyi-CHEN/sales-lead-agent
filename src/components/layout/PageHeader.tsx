@@ -24,6 +24,8 @@ export function PageHeader({ title, onBack, right, transparent = false }: PageHe
     >
       <button
         onClick={onBack ?? (() => navigate(-1))}
+        data-track="返回上一页"
+        data-track-type="导航"
         className="flex h-10 w-10 items-center justify-center rounded-lg text-foreground active:bg-secondary"
       >
         <ChevronLeft className="h-5 w-5 stroke-[2.5px]" />

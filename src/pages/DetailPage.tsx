@@ -76,7 +76,11 @@ export function DetailPage() {
       <PageHeader
         title="标讯详情"
         right={
-          <button className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground active:bg-secondary">
+          <button
+            data-track="分享标讯"
+            data-track-type="标讯操作"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground active:bg-secondary"
+          >
             <Share2 className="h-[18px] w-[18px]" />
           </button>
         }
@@ -186,6 +190,8 @@ export function DetailPage() {
             href={bid.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
+            data-track="查看原始公告"
+            data-track-type="标讯浏览"
             className="flex w-full items-center justify-between rounded-xl border bg-card p-4 text-sm text-primary active:bg-accent"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
@@ -219,6 +225,8 @@ export function DetailPage() {
               size="full"
               className="flex-1 gap-1.5"
               onClick={() => setShowNoOppSheet(true)}
+              data-track="标记为「无商机」"
+              data-track-type="商机处理"
             >
               <XCircle className="h-4 w-4" />
               无商机
@@ -228,6 +236,8 @@ export function DetailPage() {
               size="full"
               className="flex-1 gap-1.5"
               onClick={() => setShowLinkSheet(true)}
+              data-track="关联已有商机"
+              data-track-type="商机处理"
             >
               <Link2 className="h-4 w-4" />
               关联商机
@@ -237,6 +247,8 @@ export function DetailPage() {
               size="full"
               className="flex-1 gap-1.5"
               onClick={() => setShowCreateSheet(true)}
+              data-track="新建商机"
+              data-track-type="商机处理"
             >
               <PlusCircle className="h-4 w-4" />
               新建

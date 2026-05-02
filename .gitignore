@@ -5,3 +5,4 @@ dist/
 *.tsbuildinfo
 qrcode.png
 review_diff.txt
+.analytics-data/

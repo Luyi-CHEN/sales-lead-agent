@@ -37,6 +37,8 @@ export function BidListTab() {
         <div className="flex items-center gap-2 mb-2">
           <button
             onClick={() => setShowSearch(!showSearch)}
+            data-track="打开搜索"
+            data-track-type="搜索"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground active:bg-secondary"
           >
             <Search className="h-4 w-4" />
@@ -46,6 +48,8 @@ export function BidListTab() {
               <button
                 key={f.key}
                 onClick={() => setActiveFilter(f.key)}
+                data-track={`筛选「${f.label}」标讯`}
+                data-track-type="筛选"
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all duration-200 ${
                   activeFilter === f.key
                     ? 'bg-primary text-primary-foreground'

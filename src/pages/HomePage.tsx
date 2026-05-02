@@ -29,6 +29,8 @@ export function HomePage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
+                  data-track={`切换到「${tab.label}」`}
+                  data-track-type="导航"
                   className={cn(
                     "relative flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition-all duration-200",
                     isActive

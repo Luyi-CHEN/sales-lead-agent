@@ -24,6 +24,9 @@ export function BidCard({ bid, onClick }: BidCardProps) {
       tabIndex={0}
       onClick={(e) => { e.stopPropagation(); onClick() }}
       onKeyDown={(e) => { if (e.key === 'Enter') onClick() }}
+      data-track="查看标讯详情"
+      data-track-type="标讯浏览"
+      data-track-detail={bid.projectName}
       className="card-press relative cursor-pointer rounded-xl border bg-card p-4"
       style={{ boxShadow: 'var(--shadow-card)', position: 'relative', zIndex: 1 }}
     >
