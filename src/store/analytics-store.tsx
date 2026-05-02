@@ -85,26 +85,38 @@ function escapeCSV(val: string): string {
 
 // ===== Server API helpers =====
 
+// VITE_ANALYTICS_API: Set to your Alibaba Cloud FC endpoint URL in production
+// e.g. "https://xxx.cn-hangzhou.fc.aliyuncs.com/2016-08-15/proxy/analytics-service/analytics-api"
+// When not set, falls back to local Vite dev server API (same origin)
 function getApiBase(): string {
-  // In dev mode, API is served by Vite dev server at the same origin
-  return window.location.origin
+  const remoteApi = import.meta.env.VITE_ANALYTICS_API as string | undefined
+  if (remoteApi) return remoteApi.replace(/\/$/, '')
+  return window.location.origin + '/api/analytics'
 }
 
 async function postToServer(endpoint: string, data: unknown): Promise<void> {
   try {
-    await fetch(`${getApiBase()}${endpoint}`, {
+    const base = getApiBase()
+    const isRemote = !!import.meta.env.VITE_ANALYTICS_API
+    // Remote API: /chat or /clicks (no /api/analytics prefix)
+    // Local API: /api/analytics/chat or /api/analytics/clicks
+    const url = isRemote ? `${base}${endpoint}` : `${window.location.origin}/api/analytics${endpoint}`
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
   } catch {
-    // Silently fail — server API is optional (e.g., in production build)
+    // Silently fail — server API is optional
   }
 }
 
 async function fetchFromServer<T>(endpoint: string): Promise<T[]> {
   try {
-    const res = await fetch(`${getApiBase()}${endpoint}`)
+    const base = getApiBase()
+    const isRemote = !!import.meta.env.VITE_ANALYTICS_API
+    const url = isRemote ? `${base}${endpoint}` : `${window.location.origin}/api/analytics${endpoint}`
+    const res = await fetch(url)
     if (res.ok) return await res.json()
   } catch {
     // Server not available
@@ -114,7 +126,10 @@ async function fetchFromServer<T>(endpoint: string): Promise<T[]> {
 
 async function deleteFromServer(endpoint: string): Promise<void> {
   try {
-    await fetch(`${getApiBase()}${endpoint}`, { method: 'DELETE' })
+    const base = getApiBase()
+    const isRemote = !!import.meta.env.VITE_ANALYTICS_API
+    const url = isRemote ? `${base}${endpoint}` : `${window.location.origin}/api/analytics${endpoint}`
+    await fetch(url, { method: 'DELETE' })
   } catch {
     // Silently fail
   }
@@ -164,7 +179,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     chatLogsRef.current = [...chatLogsRef.current, record]
     writeToStorage(CHAT_LOG_KEY, chatLogsRef.current, MAX_ENTRIES)
     // Sync to server (fire-and-forget)
-    postToServer('/api/analytics/chat', record)
+    postToServer('/chat', record)
   }, [sessionId])
 
   const logClick = useCallback((entry: Omit<ClickPathEntry, 'id' | 'timestamp' | 'sessionId'>) => {
@@ -177,7 +192,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     clickPathsRef.current = [...clickPathsRef.current, record]
     writeToStorage(CLICK_PATH_KEY, clickPathsRef.current, MAX_ENTRIES)
     // Sync to server (fire-and-forget)
-    postToServer('/api/analytics/clicks', record)
+    postToServer('/clicks', record)
   }, [sessionId])
 
   const getChatLogs = useCallback(() => chatLogsRef.current, [])
@@ -186,8 +201,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   // Fetch data from server (for PC analytics dashboard, merges all device data)
   const fetchServerData = useCallback(async () => {
     const [serverChats, serverClicks] = await Promise.all([
-      fetchFromServer<ChatLogEntry>('/api/analytics/chat'),
-      fetchFromServer<ClickPathEntry>('/api/analytics/clicks'),
+      fetchFromServer<ChatLogEntry>('/chat'),
+      fetchFromServer<ClickPathEntry>('/clicks'),
     ])
     chatLogsRef.current = serverChats
     clickPathsRef.current = serverClicks
@@ -196,13 +211,13 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const clearChatLogs = useCallback(() => {
     chatLogsRef.current = []
     localStorage.removeItem(CHAT_LOG_KEY)
-    deleteFromServer('/api/analytics/chat')
+    deleteFromServer('/chat')
   }, [])
 
   const clearClickPaths = useCallback(() => {
     clickPathsRef.current = []
     localStorage.removeItem(CLICK_PATH_KEY)
-    deleteFromServer('/api/analytics/clicks')
+    deleteFromServer('/clicks')
   }, [])
 
   const exportChatLogsCSV = useCallback(() => {
