@@ -101,13 +101,16 @@ async function postToServer(endpoint: string, data: unknown): Promise<void> {
     // Remote API: /chat or /clicks (no /api/analytics prefix)
     // Local API: /api/analytics/chat or /api/analytics/clicks
     const url = isRemote ? `${base}${endpoint}` : `${window.location.origin}/api/analytics${endpoint}`
-    await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
-  } catch {
-    // Silently fail — server API is optional
+    if (!res.ok) {
+      console.warn(`[Analytics] POST ${endpoint} failed: ${res.status} ${res.statusText}`)
+    }
+  } catch (e) {
+    console.warn(`[Analytics] POST ${endpoint} error:`, e)
   }
 }
 
@@ -118,8 +121,9 @@ async function fetchFromServer<T>(endpoint: string): Promise<T[]> {
     const url = isRemote ? `${base}${endpoint}` : `${window.location.origin}/api/analytics${endpoint}`
     const res = await fetch(url)
     if (res.ok) return await res.json()
-  } catch {
-    // Server not available
+    console.warn(`[Analytics] GET ${endpoint} failed: ${res.status} ${res.statusText}`)
+  } catch (e) {
+    console.warn(`[Analytics] GET ${endpoint} error:`, e)
   }
   return []
 }
