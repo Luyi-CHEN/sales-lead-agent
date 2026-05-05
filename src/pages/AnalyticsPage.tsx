@@ -746,7 +746,7 @@ function TabButton({ active, onClick, icon, label, count }: {
 
 // ===== Chat Analytics Panel =====
 
-function ChatAnalyticsPanel({ logs, intentStats, chatSearch, setChatSearch, chatSort, setChatSort, expandedSessions, toggleSession, formatTime, onExport, onClear }: {
+function ChatAnalyticsPanel({ logs, intentStats, chatSearch, setChatSearch, chatSort, setChatSort, expandedSessions: _expandedSessions, toggleSession: _toggleSession, formatTime, onExport, onClear }: {
   logs: ChatLogEntry[]
   intentStats: { intent: string; count: number; pct: number }[]
   chatSearch: string; setChatSearch: (v: string) => void

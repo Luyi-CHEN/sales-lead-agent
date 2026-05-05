@@ -35,6 +35,7 @@ export interface Opportunity {
   owner: string
   probability: number
   createDate: string
+  hasSolutionOpportunity?: '是' | '否'  // 是否有解决方案机会
 }
 
 // 基于真实 Excel 数据的模拟标讯（共 20 条）

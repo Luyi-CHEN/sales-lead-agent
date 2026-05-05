@@ -35,6 +35,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     winRate: '10%(项目筹备期)',              // 赢率，默认10%
     totalAmount: budgetInYuan,               // 产品总金额（元）
     totalQuantity: bid.totalQuantity || '',  // 主机总台数
+    hasSolutionOpportunity: '',              // 是否有解决方案机会（非自动填充，用户手选）
     remark: '',                              // 备注，默认为空
   })
 
@@ -204,6 +205,17 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                   isOpen={openDropdown === 'winRate'}
                   onToggle={() => toggleDropdown('winRate')}
                   onSelect={(val) => { update('winRate', val); setOpenDropdown(null) }}
+                />
+              </FormField>
+
+              {/* 是否有解决方案机会 - 下拉选项（非自动填充） */}
+              <FormField label="是否有解决方案机会">
+                <DropdownSelect
+                  value={formData.hasSolutionOpportunity || '请选择'}
+                  options={['是', '否']}
+                  isOpen={openDropdown === 'hasSolutionOpportunity'}
+                  onToggle={() => toggleDropdown('hasSolutionOpportunity')}
+                  onSelect={(val) => { update('hasSolutionOpportunity', val); setOpenDropdown(null) }}
                 />
               </FormField>
 
