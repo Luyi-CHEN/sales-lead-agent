@@ -165,6 +165,7 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 - 采购人联系方式（电话脱敏显示 + 拨号脱敏保护）
 - 原始公告链接跳转
 - 三种商机操作：关联已有商机 / 新建商机 / 标记无商机
+- 新建商机表单：自动预填标讯信息 + 手动填写【是否有解决方案机会】（下拉：是/否）
 
 ### 3. PC 分析看板
 
@@ -289,6 +290,7 @@ interface Opportunity {
   owner: string
   probability: number
   createDate: string
+  hasSolutionOpportunity?: '是' | '否'  // 是否有解决方案机会
 }
 ```
 
