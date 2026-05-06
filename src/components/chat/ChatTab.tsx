@@ -456,40 +456,71 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
     )
   }
 
-  // Bid alert cards (compact, for pending bids only)
+  // Bid alert cards (unified with ChatBidList card UI)
   if (message.type === 'bid-alert') {
     return (
       <div className="flex items-start gap-2.5 animate-fade-in">
         <AgentAvatar />
         <div className="flex-1 flex flex-col gap-2 max-w-[85%]">
-          {pendingBids.slice(0, 3).map(bid => (
-            <button
-              key={bid.id}
-              onClick={() => onBidClick(bid.id)}
-              data-track="从对话中查看标讯提醒"
-              data-track-type="标讯浏览"
-              data-track-detail={bid.projectName}
-              className="card-press w-full rounded-xl border bg-card p-3 text-left"
-              style={{ boxShadow: 'var(--shadow-card)' }}
-            >
-              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                <span className="rounded bg-info-muted px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground">
-                  新标讯
-                </span>
-                {bid.relatedOpportunityCount > 0 && (
-                  <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                    可能关联 {bid.relatedOpportunityCount} 条商机
-                  </span>
+          {pendingBids.slice(0, 3).map(bid => {
+            const status = statusConfig[bid.status]
+            const industryClass = industryColors[bid.industry] || 'bg-secondary text-muted-foreground'
+            return (
+              <button
+                key={bid.id}
+                onClick={() => onBidClick(bid.id)}
+                data-track="从对话中查看标讯提醒"
+                data-track-type="标讯浏览"
+                data-track-detail={bid.projectName}
+                className="card-press w-full rounded-xl border bg-card text-left relative"
+                style={{ boxShadow: 'var(--shadow-card)' }}
+              >
+                {/* Unread dot */}
+                {!bid.isRead && (
+                  <span className="absolute top-3 left-1 h-1.5 w-1.5 rounded-full bg-primary" />
                 )}
-              </div>
-              <p className="text-xs font-semibold text-foreground leading-snug line-clamp-1">
-                {bid.projectName}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
-                {bid.procurementUnit || bid.industry} · ¥{bid.budgetAmount}万
-              </p>
-            </button>
-          ))}
+                <div className="flex items-start gap-2.5 px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    {/* Row 1: status + industry + related opp */}
+                    <div className="flex items-center gap-1 mb-0.5 flex-wrap">
+                      <Badge variant={status.variant} className="text-[9px] px-1 py-0 h-4 leading-none">
+                        {status.label}
+                      </Badge>
+                      <span className={cn('rounded px-1 py-0 text-[9px] font-medium h-4 leading-4 inline-flex items-center', industryClass)}>
+                        {bid.industry}
+                      </span>
+                      {bid.status === 'pending' && bid.relatedOpportunityCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-medium text-primary ml-auto">
+                          <Link2 className="h-2.5 w-2.5" />
+                          关联{bid.relatedOpportunityCount}条
+                        </span>
+                      )}
+                    </div>
+                    {/* Row 2: project name */}
+                    <p className="text-xs font-semibold text-foreground leading-snug line-clamp-1 mb-0.5">
+                      {bid.projectName}
+                    </p>
+                    {/* Row 3: meta */}
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-0.5 truncate">
+                        <MapPin className="h-2.5 w-2.5 shrink-0" />
+                        {bid.region}·{bid.city}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Clock className="h-2.5 w-2.5 shrink-0" />
+                        {bid.deadline}
+                      </span>
+                      <span className="flex items-center gap-0.5 ml-auto font-semibold text-foreground">
+                        <Banknote className="h-2.5 w-2.5 shrink-0" />
+                        {bid.budgetAmount}万
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-2.5" />
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
     )

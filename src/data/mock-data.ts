@@ -86,7 +86,7 @@ export const mockBids: BidInfo[] = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
     status: 'pending',
     isRead: true,
-    relatedOpportunityCount: 0,
+    relatedOpportunityCount: 3,
   },
   {
     id: 'BX-2026-003',
