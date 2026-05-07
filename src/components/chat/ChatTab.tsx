@@ -462,7 +462,7 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
       <div className="flex items-start gap-2.5 animate-fade-in">
         <AgentAvatar />
         <div className="flex-1 flex flex-col gap-2 max-w-[85%]">
-          {pendingBids.slice(0, 3).map(bid => {
+          {withOpps.map(bid => {
             const status = statusConfig[bid.status]
             const industryClass = industryColors[bid.industry] || 'bg-secondary text-muted-foreground'
             return (
