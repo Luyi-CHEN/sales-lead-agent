@@ -8,10 +8,10 @@ interface BidCardProps {
 }
 
 const statusConfig = {
-  pending: { label: '待处理', variant: 'new' as const },
-  linked: { label: '已关联商机', variant: 'done' as const },
-  no_opportunity: { label: '无商机反馈', variant: 'destructive' as const },
-  new_opportunity: { label: '已新建商机', variant: 'done' as const },
+  pending: { label: '已分配（待跟进）', variant: 'new' as const },
+  linked: { label: '已反馈（关联已有商机）', variant: 'done' as const },
+  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' as const },
+  new_opportunity: { label: '已反馈（新商机）', variant: 'done' as const },
 }
 
 export function BidCard({ bid, onClick }: BidCardProps) {

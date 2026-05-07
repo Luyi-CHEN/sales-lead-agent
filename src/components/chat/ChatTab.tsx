@@ -73,7 +73,7 @@ export function ChatTab() {
           : ''
         addMessage({
           role: 'agent',
-          content: `你有 **${pendingBids.length} 条新标讯**待处理${oppHint}。我来帮你快速处理？`,
+          content: `你有 **${pendingBids.length} 条新标讯**待跟进${oppHint}。我来帮你快速处理？`,
           type: 'text',
         })
       } else {
@@ -292,10 +292,10 @@ function AgentAvatar() {
 // Inline bid list component for chat
 // ==========================================
 const statusConfig: Record<string, { label: string; variant: 'new' | 'done' | 'destructive' }> = {
-  pending: { label: '待处理', variant: 'new' },
-  linked: { label: '已关联商机', variant: 'done' },
-  no_opportunity: { label: '无商机反馈', variant: 'destructive' },
-  new_opportunity: { label: '已新建商机', variant: 'done' },
+  pending: { label: '已分配（待跟进）', variant: 'new' },
+  linked: { label: '已反馈（关联已有商机）', variant: 'done' },
+  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' },
+  new_opportunity: { label: '已反馈（新商机）', variant: 'done' },
 }
 
 type ListFilter = 'all' | 'pending' | 'feedback' | 'with_opps'
@@ -314,7 +314,7 @@ function ChatBidList({ allBids, initialFilter, onBidClick }: {
 
   const filters: { key: ListFilter; label: string; count: number }[] = [
     { key: 'all', label: '全部', count: allBids.length },
-    { key: 'pending', label: '待处理', count: allBids.filter(b => b.status === 'pending').length },
+    { key: 'pending', label: '待跟进', count: allBids.filter(b => b.status === 'pending').length },
     { key: 'feedback', label: '已反馈', count: allBids.filter(b => ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)).length },
     { key: 'with_opps', label: '有关联', count: allBids.filter(b => b.status === 'pending' && b.relatedOpportunityCount > 0).length },
   ]
@@ -620,7 +620,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   if (matchAny(text, ['你好', '您好', 'hello', 'hi', '嗨', '早上好', '下午好', '晚上好', '早'])) {
     return {
       intentName: 'greeting',
-      content: `你好！👋 当前有 **${pendingBids.length} 条标讯**待处理，其中 ${withOpps.length} 条可能关联商机。需要我帮你快速查看吗？`,
+      content: `你好！👋 当前有 **${pendingBids.length} 条标讯**待跟进，其中 ${withOpps.length} 条可能关联商机。需要我帮你快速查看吗？`,
       delay: 500,
       extras: {
         type: 'quick-actions',
@@ -645,7 +645,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   if (matchAny(text, ['帮助', '能做什么', '功能', '怎么用', '你能', '你会', '你可以', '有什么功能'])) {
     return {
       intentName: 'help',
-      content: '我可以帮你：\n\n📋 **查看标讯** — 浏览全部或筛选待处理标讯\n🔗 **关联商机** — 查看可能关联商机的标讯\n📊 **统计概况** — 了解当前标讯的区域、行业、预算分布\n🔍 **按条件筛选** — 按区域、行业或预算范围查找\n\n试试输入"江苏的标讯"或"预算超过500万"',
+      content: '我可以帮你：\n\n📋 **查看标讯** — 浏览全部或筛选待跟进标讯\n🔗 **关联商机** — 查看可能关联商机的标讯\n📊 **统计概况** — 了解当前标讯的区域、行业、预算分布\n🔍 **按条件筛选** — 按区域、行业或预算范围查找\n\n试试输入"江苏的标讯"或"预算超过500万"',
       delay: 600,
       extras: {
         type: 'quick-actions',
@@ -672,7 +672,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
 
     return {
       intentName: 'statistics',
-      content: `📊 当前标讯概况：\n\n📋 待处理标讯：**${pendingBids.length} 条**\n🔗 可能关联商机：**${withOpps.length} 条**\n💰 总预算规模：**${totalBudget.toFixed(0)}万元**\n\n🗺️ 区域分布：${regionSummary}\n🏢 行业分布：${industrySummary}`,
+      content: `📊 当前标讯概况：\n\n📋 待跟进标讯：**${pendingBids.length} 条**\n🔗 可能关联商机：**${withOpps.length} 条**\n💰 总预算规模：**${totalBudget.toFixed(0)}万元**\n\n🗺️ 区域分布：${regionSummary}\n🏢 行业分布：${industrySummary}`,
       delay: 700,
       extras: {
         type: 'quick-actions',
@@ -694,14 +694,14 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
       const oppHint = oppCount > 0 ? `，其中 ${oppCount} 条可能关联商机` : ''
       return {
         intentName: 'filter_region',
-        content: `📍 ${matchedRegion}区域共有 **${regionBids.length} 条**待处理标讯${oppHint}：`,
+        content: `📍 ${matchedRegion}区域共有 **${regionBids.length} 条**待跟进标讯${oppHint}：`,
         delay: 600,
         extras: { type: 'bid-list', listFilter: 'all' },
       }
     }
     return {
       intentName: 'filter_region',
-      content: `📍 ${matchedRegion}区域暂无待处理标讯。要看看其他区域吗？`,
+      content: `📍 ${matchedRegion}区域暂无待跟进标讯。要看看其他区域吗？`,
       delay: 500,
       extras: {
         type: 'quick-actions',
@@ -720,14 +720,14 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
     if (industryBids.length > 0) {
       return {
         intentName: 'filter_industry',
-        content: `🏢 ${industryKey}行业共有 **${industryBids.length} 条**待处理标讯：`,
+        content: `🏢 ${industryKey}行业共有 **${industryBids.length} 条**待跟进标讯：`,
         delay: 600,
         extras: { type: 'bid-list', listFilter: 'all' },
       }
     }
     return {
       intentName: 'filter_industry',
-      content: `🏢 ${industryKey}行业暂无待处理标讯。`,
+      content: `🏢 ${industryKey}行业暂无待跟进标讯。`,
       delay: 500,
     }
   }
@@ -782,7 +782,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   if (matchAny(text, ['标讯', '新的', '待处理', '待办', '未处理', '没处理', '处理'])) {
     return {
       intentName: 'view_pending',
-      content: `当前有 **${unreadCount} 条**标讯待处理，需要我帮你逐条处理吗？`,
+      content: `当前有 **${unreadCount} 条**标讯待跟进，需要我帮你逐条处理吗？`,
       delay: 700,
       extras: {
         type: 'quick-actions',
@@ -824,7 +824,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
     }
     return {
       intentName: 'keyword_search',
-      content: `🔍 暂未找到与「${kw}」相关的待处理标讯。`,
+      content: `🔍 暂未找到与「${kw}」相关的待跟进标讯。`,
       delay: 500,
     }
   }

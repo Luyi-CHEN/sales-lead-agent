@@ -5,7 +5,7 @@ export function StatsPage() {
     { label: '本月标讯', value: '28', change: '+12%' },
     { label: '已处理', value: '19', change: '+8%' },
     { label: '关联商机', value: '7', change: '+3' },
-    { label: '待处理', value: '9', change: '-' },
+    { label: '待跟进', value: '9', change: '-' },
   ]
 
   return (

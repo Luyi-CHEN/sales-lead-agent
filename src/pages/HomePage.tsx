@@ -56,7 +56,7 @@ export function HomePage() {
             <p className="text-xs text-muted-foreground">智能引导处理标讯 · 在线</p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} 条新标讯待处理` : '暂无新标讯'}
+              {unreadCount > 0 ? `${unreadCount} 条新标讯待跟进` : '暂无新标讯'}
             </p>
           )}
         </div>

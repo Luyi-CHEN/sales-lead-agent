@@ -26,7 +26,7 @@ export function BidListTab() {
 
   const filters = [
     { key: 'all' as const, label: '全部', count: bids.length },
-    { key: 'pending' as const, label: '待处理', count: bids.filter(b => b.status === 'pending').length },
+    { key: 'pending' as const, label: '待跟进', count: bids.filter(b => b.status === 'pending').length },
     { key: 'feedback' as const, label: '已反馈', count: bids.filter(b => ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)).length },
   ]
 
