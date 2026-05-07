@@ -609,13 +609,12 @@ export const industryColors: Record<string, string> = {
   '政府': 'bg-warning-muted text-warning',
 }
 
-export const materialProductGroups = [
-  { id: '1', name: '企业级System x(A7)', productLine: 'A7产品组产品线' },
-  { id: '2', name: 'B7企业级服务器(B7)', productLine: 'XC' },
-  { id: '3', name: 'B7企业级服务器(B7)', productLine: 'XC' },
-  { id: '4', name: '企业级存储-NAS(16)', productLine: 'SAN-NAS' },
-  { id: '5', name: '企业级存储-SAN(18)', productLine: 'SAN-NAS' },
-]
+export const materialProductGroups: Record<string, { name: string; productLine: string }> = {
+  '1': { name: '企业级System x(A7)', productLine: 'A7产品组产品线' },
+  '2': { name: 'B7企业级服务器(B7)', productLine: 'XC' },
+  '3': { name: '企业级存储-NAS(16)', productLine: 'SAN-NAS' },
+  '4': { name: '企业级存储-SAN(18)', productLine: 'SAN-NAS' },
+}
 
 // 标讯一纸通数据结构
 export interface BidOnePagerData {

@@ -52,7 +52,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
   }
 
   const handleMaterialGroupChange = (index: number, groupId: string) => {
-    const group = materialProductGroups.find(g => g.id === groupId)
+    const group = materialProductGroups[groupId]
     setProductDetails(prev => prev.map((item, i) =>
       i === index ? { ...item, materialGroupId: groupId, productLine: group?.productLine || '' } : item
     ))
@@ -203,6 +203,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                   type="date"
                   value={formData.expectedSignDate}
                   onChange={e => update('expectedSignDate', e.target.value)}
+                  placeholder="请选择日期"
                   className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </FormField>
@@ -266,7 +267,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                   <FormField label="物料产品组" required>
                     <ObjectDropdownSelect
                       value={detail.materialGroupId}
-                      items={materialProductGroups}
+                      items={Object.entries(materialProductGroups).map(([id, { name }]) => ({ id, name }))}
                       isOpen={openDropdown === `materialGroup_${index}`}
                       onToggle={() => toggleDropdown(`materialGroup_${index}`)}
                       onSelect={(id) => { handleMaterialGroupChange(index, id); setOpenDropdown(null) }}
