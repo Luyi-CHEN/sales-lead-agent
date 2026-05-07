@@ -199,13 +199,19 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
 
               {/* 预计签约日期 */}
               <FormField label="预计签约日期" required>
-                <input
-                  type="date"
-                  value={formData.expectedSignDate}
-                  onChange={e => update('expectedSignDate', e.target.value)}
-                  placeholder="请选择日期"
-                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.expectedSignDate}
+                    onChange={e => update('expectedSignDate', e.target.value)}
+                    className={`h-10 w-full rounded-lg border bg-secondary px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formData.expectedSignDate ? 'text-foreground' : 'text-transparent'}`}
+                  />
+                  {!formData.expectedSignDate && (
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                      请选择日期
+                    </span>
+                  )}
+                </div>
               </FormField>
 
               {/* 赢率 */}
