@@ -15,6 +15,7 @@ interface Message {
   bidId?: string
   actions?: { label: string; action: string }[]
   listFilter?: 'all' | 'pending' | 'with_opps'
+  filteredBidIds?: string[]  // 新增：预过滤的标讯ID列表
 }
 
 export function ChatTab() {
@@ -300,9 +301,10 @@ const statusConfig: Record<string, { label: string; variant: 'new' | 'done' | 'd
 
 type ListFilter = 'all' | 'pending' | 'feedback' | 'with_opps'
 
-function ChatBidList({ allBids, initialFilter, onBidClick }: {
+function ChatBidList({ allBids, initialFilter, filteredBidIds, onBidClick }: {
   allBids: BidInfo[]
   initialFilter: 'all' | 'pending' | 'with_opps'
+  filteredBidIds?: string[]
   onBidClick: (id: string) => void
 }) {
   const mapInitial = (f: string): ListFilter => {
@@ -319,34 +321,38 @@ function ChatBidList({ allBids, initialFilter, onBidClick }: {
     { key: 'with_opps', label: '有关联', count: allBids.filter(b => b.status === 'pending' && b.relatedOpportunityCount > 0).length },
   ]
 
-  const filtered = allBids.filter(b => {
-    if (activeFilter === 'pending') return b.status === 'pending'
-    if (activeFilter === 'feedback') return ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)
-    if (activeFilter === 'with_opps') return b.status === 'pending' && b.relatedOpportunityCount > 0
-    return true
-  })
+  const filtered = filteredBidIds && filteredBidIds.length > 0
+    ? allBids.filter(b => filteredBidIds.includes(b.id))
+    : allBids.filter(b => {
+        if (activeFilter === 'pending') return b.status === 'pending'
+        if (activeFilter === 'feedback') return ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)
+        if (activeFilter === 'with_opps') return b.status === 'pending' && b.relatedOpportunityCount > 0
+        return true
+      })
 
   return (
     <div className="w-full rounded-xl border bg-card overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
       {/* Filter chips */}
-      <div className="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto scrollbar-hide">
-        {filters.map(f => (
-          <button
-            key={f.key}
-            onClick={() => setActiveFilter(f.key)}
-            data-track={`对话中筛选「${f.label}」`}
-            data-track-type="筛选"
-            className={cn(
-              'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200',
-              activeFilter === f.key
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-muted-foreground active:bg-muted'
-            )}
-          >
-            {f.label} {f.count}
-          </button>
-        ))}
-      </div>
+      {(!filteredBidIds || filteredBidIds.length === 0) && (
+        <div className="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto scrollbar-hide">
+          {filters.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              data-track={`对话中筛选「${f.label}」`}
+              data-track-type="筛选"
+              className={cn(
+                'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all duration-200',
+                activeFilter === f.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground active:bg-muted'
+              )}
+            >
+              {f.label} {f.count}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Bid rows */}
       <div className="max-h-[320px] overflow-y-auto scrollbar-hide divide-y divide-border">
@@ -449,6 +455,7 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
           <ChatBidList
             allBids={allBids}
             initialFilter={message.listFilter || 'all'}
+            filteredBidIds={message.filteredBidIds}
             onBidClick={onBidClick}
           />
         </div>
@@ -696,7 +703,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
         intentName: 'filter_region',
         content: `📍 ${matchedRegion}区域共有 **${regionBids.length} 条**待跟进标讯${oppHint}：`,
         delay: 600,
-        extras: { type: 'bid-list', listFilter: 'all' },
+        extras: { type: 'bid-list', listFilter: 'all', filteredBidIds: regionBids.map(b => b.id) },
       }
     }
     return {
@@ -722,7 +729,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
         intentName: 'filter_industry',
         content: `🏢 ${industryKey}行业共有 **${industryBids.length} 条**待跟进标讯：`,
         delay: 600,
-        extras: { type: 'bid-list', listFilter: 'all' },
+        extras: { type: 'bid-list', listFilter: 'all', filteredBidIds: industryBids.map(b => b.id) },
       }
     }
     return {
