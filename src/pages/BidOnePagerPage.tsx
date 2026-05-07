@@ -1,9 +1,7 @@
-import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { BidOnePager } from '@/components/bid/BidOnePager'
 
 export function BidOnePagerPage() {
-  const navigate = useNavigate()
 
   return (
     <div className="flex h-full flex-col bg-background">
