@@ -1,71 +1,129 @@
-# Alibaba Cloud Deployment Guide
+# Deployment Guide
 
-> Deploy the prototype to Alibaba Cloud for public access user testing.
+> Deploy the prototype for public access user testing.
 >
-> Architecture: **OSS (frontend hosting)** + **FC (analytics API)** + **OSS (data storage)**
+> Architecture: **GitHub Pages (frontend hosting)** + **Alibaba Cloud FC 3.0 (analytics API)** + **OSS (data storage)**
+
+## Architecture Overview
+
+```
+┌───────────────────────────┐
+│  📱 Mobile / 💻 PC Browser │
+└─────────┬─────────────────┘
+          │ HTTPS
+          ▼
+┌───────────────────────────┐
+│  GitHub Pages             │  ← Frontend static hosting (dist/)
+│  React SPA                │
+└─────────┬─────────────────┘
+          │ CORS HTTPS
+          ▼
+┌───────────────────────────┐
+│  Alibaba Cloud FC 3.0     │  ← Serverless analytics API
+│  Node.js 18 event-driven  │
+└─────────┬─────────────────┘
+          │ ali-oss SDK
+          ▼
+┌───────────────────────────┐
+│  Alibaba Cloud OSS        │  ← JSON file persistence
+│  analytics-data/          │
+│  ├── chat-logs.json       │
+│  └── click-paths.json     │
+└───────────────────────────┘
+```
+
+**Monthly cost**: < 1 RMB (FC free tier + minimal OSS storage)
 
 ## Prerequisites
 
-- Alibaba Cloud account (aliyun.com)
-- Alibaba Cloud CLI (`aliyun`) or use the web console
+- GitHub account (for repository & Pages)
+- Alibaba Cloud account (aliyun.com) — for FC + OSS
 - Node.js 18+ locally
 
-## Step 1: Create OSS Bucket
+## Step 1: Deploy Frontend to GitHub Pages
 
-1. Login to [Alibaba Cloud Console](https://oss.console.aliyun.com/)
-2. Create a new Bucket:
-   - **Name**: e.g. `sales-lead-agent`
-   - **Region**: e.g. China East 1 (Hangzhou) `oss-cn-hangzhou`
-   - **Storage Class**: Standard
-   - **Access Control**: Public Read
-3. In Bucket settings, enable **Static Website Hosting**:
-   - Index Document: `index.html`
-   - Error Document: `index.html` (for SPA routing)
+### 1.1 Push Code to GitHub
+
+1. Create a GitHub repository (e.g. `sales-lead-agent`)
+2. Push the project code to the `main` branch
+
+### 1.2 Configure GitHub Actions Auto-Deploy
+
+The project includes `.github/workflows/deploy.yml` which automatically builds and deploys to GitHub Pages on every push to `main`.
+
+1. Go to repo **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+3. Push to `main` branch — the workflow will auto-build and deploy
+
+The workflow:
+- Installs dependencies with `npm ci`
+- Builds with `npm run build`
+- Deploys `dist/` to GitHub Pages
+
+### 1.3 Configure Base Path
+
+In `vite.config.ts`, the `base` path must match your repo name:
+
+```ts
+export default defineConfig({
+  base: '/sales-lead-agent/',  // Must match GitHub repo name
+  // ...
+})
+```
+
+### 1.4 SPA Routing
+
+GitHub Pages doesn't natively support SPA routing. The project uses a `public/404.html` redirect trick to handle client-side routing. No additional configuration needed — just make sure `404.html` is in the `public/` directory.
+
+### 1.5 Access URLs
+
+| Page | URL |
+|------|-----|
+| Mobile Prototype | `https://<username>.github.io/sales-lead-agent/` |
+| PC Analytics Dashboard | `https://<username>.github.io/sales-lead-agent/analytics` |
 
 ## Step 2: Deploy FC Analytics API
 
 ### 2.1 Create RAM User (for FC to access OSS)
 
-1. Go to [RAM Console](https://ram.console.aliyun.com/)
-2. Create a new user with **API Access** (get AccessKey ID & Secret)
+1. Go to [RAM Console](https://ram.console.aliyun.com/users)
+2. Create a new user with **OpenAPI Access** (get AccessKey ID & Secret)
 3. Grant permission: `AliyunOSSFullAccess`
+
+> ⚠️ AccessKey Secret is shown only once — save it immediately.
 
 ### 2.2 Create FC Function
 
-1. Go to [FC Console](https://fc.console.aliyun.com/)
-2. Create a **Service**: `analytics-service`
-3. Create a **Function**:
-   - **Name**: `analytics-api`
+1. Go to [FC Console](https://fcnext.console.aliyun.com/)
+2. Create a function:
+   - **Name**: e.g. `sales-lead-analytics`
    - **Runtime**: Node.js 18
-   - **Handler**: `index.handler`
+   - **Handler Type**: Handle HTTP Requests
    - **Memory**: 128 MB
    - **Timeout**: 30 seconds
 
-4. Upload code:
-   ```bash
-   cd aliyun-fc
-   npm install
-   # Zip the directory contents (index.js + node_modules + package.json)
-   # Upload the zip in FC console
-   ```
+3. Upload code:
+   - Enter the **Code Editor** in FC console
+   - Paste the contents of `aliyun-fc/index.js`
+   - Run `npm install ali-oss` in the FC terminal
+   - Click **Deploy**
 
-5. Set **Environment Variables**:
+4. Set **Environment Variables**:
+
    | Variable | Value |
    |----------|-------|
-   | `OSS_REGION` | `oss-cn-hangzhou` |
-   | `OSS_BUCKET` | your bucket name (e.g. `sales-lead-agent`) |
+   | `OSS_REGION` | `oss-cn-beijing` (match your bucket region) |
+   | `OSS_BUCKET` | your bucket name |
    | `OSS_ACCESS_KEY_ID` | your RAM user's AccessKey ID |
    | `OSS_ACCESS_KEY_SECRET` | your RAM user's AccessKey Secret |
 
-6. Create **HTTP Trigger**:
-   - **Name**: `http-trigger`
+5. Create **HTTP Trigger**:
    - **Authentication**: Anonymous
    - **Methods**: GET, POST, DELETE, OPTIONS
-   - **URL format**: Get the public URL after creation
 
-   The URL will look like:
+   The URL will be in FC 3.0 format:
    ```
-   https://<account-id>.<region>.fc.aliyuncs.com/2016-08-15/proxy/analytics-service/analytics-api
+   https://<function-name>-<random-id>.cn-beijing.fcapp.run
    ```
 
 ### 2.3 Test the API
@@ -85,97 +143,58 @@ curl <FC_URL>/chat
 curl -X DELETE <FC_URL>/chat
 ```
 
-## Step 3: Build & Deploy Frontend
+## Step 3: Create OSS Bucket
 
-### 3.1 Configure Environment
+1. Go to [OSS Console](https://oss.console.aliyun.com/)
+2. Create a new Bucket:
+   - **Region**: e.g. China North 2 (Beijing) `oss-cn-beijing` (match FC region)
+   - **Storage Class**: Standard
+   - **Access Control**: Private (data is accessed via FC, not directly)
+3. Create the `analytics-data/` directory with empty `chat-logs.json` (`[]`) and `click-paths.json` (`[]`)
+
+## Step 4: Configure Frontend Environment
+
+### 4.1 Set Analytics API URL
 
 Create `.env.production` in project root:
 
 ```bash
-# Set to your FC HTTP trigger URL
-VITE_ANALYTICS_API=https://<account-id>.<region>.fc.aliyuncs.com/2016-08-15/proxy/analytics-service/analytics-api
+# Set to your FC 3.0 HTTP trigger URL
+VITE_ANALYTICS_API=https://<function-name>-<random-id>.cn-beijing.fcapp.run
 ```
 
-### 3.2 Build
+### 4.2 Rebuild & Deploy
 
 ```bash
 npm run build
 ```
 
-This creates the `dist/` directory with the production build.
+Commit and push to `main` — GitHub Actions will auto-deploy the updated frontend.
 
-### 3.3 Upload to OSS
+## Step 5: Verify
 
-**Option A: Via OSS Console**
-
-1. Go to your OSS Bucket in the console
-2. Navigate to `sales-lead-agent/` directory (create if needed)
-3. Upload all files from `dist/` directory
-
-**Option B: Via ossutil CLI**
-
-```bash
-# Install ossutil: https://help.aliyun.com/document_detail/120075.html
-
-ossutil cp -r dist/ oss://your-bucket-name/sales-lead-agent/ \
-  --access-key-id <your-key-id> \
-  --access-key-secret <your-key-secret> \
-  --endpoint oss-cn-hangzhou.aliyuncs.com
-```
-
-### 3.4 Access URLs
-
-After upload, the application is accessible at:
-
-| Page | URL |
-|------|-----|
-| Mobile Prototype | `http://<bucket>.oss-cn-hangzhou.aliyuncs.com/sales-lead-agent/index.html` |
-| PC Analytics Dashboard | `http://<bucket>.oss-cn-hangzhou.aliyuncs.com/sales-lead-agent/index.html` then navigate to `/analytics` |
-
-> **Note**: Since this is a SPA with client-side routing, you may need to always access via `index.html`. If you bind a custom domain and configure rewrite rules, the URLs will be cleaner.
-
-## Step 4: SPA Routing Fix (Optional)
-
-OSS static hosting doesn't natively support SPA routing (visiting `/analytics` directly returns 404). Two solutions:
-
-### Option A: Use Hash Router (Simplest)
-
-Change `BrowserRouter` to `HashRouter` in `src/App.tsx`:
-
-```diff
-- import { BrowserRouter } from 'react-router-dom'
-+ import { HashRouter } from 'react-router-dom'
-
-- <BrowserRouter basename={import.meta.env.BASE_URL}>
-+ <HashRouter>
-```
-
-Then URLs become:
-- Mobile: `http://<bucket>.oss-cn-hangzhou.aliyuncs.com/sales-lead-agent/index.html#/`
-- Analytics: `http://<bucket>.oss-cn-hangzhou.aliyuncs.com/sales-lead-agent/index.html#/analytics`
-
-### Option B: Bind Custom Domain + CDN
-
-1. Bind a custom domain to the OSS bucket
-2. Use Alibaba Cloud CDN with "Redirect to index.html on 404" rule
-3. This allows clean URLs like `https://your-domain.com/analytics`
+1. Open `https://<username>.github.io/sales-lead-agent/` on a phone browser
+2. Click bid cards to enter detail pages
+3. Open `https://<username>.github.io/sales-lead-agent/analytics` on PC
+4. Verify that user behavior data appears in the analytics dashboard
+5. Test on different devices — data should aggregate to the same dashboard
 
 ## Cost Estimate
 
 | Service | Free Tier | Prototype Usage | Cost |
 |---------|-----------|-----------------|------|
-| OSS | ~5GB egress/month | ~10MB storage + minimal traffic | < 1 RMB/month |
+| GitHub Pages | Free for public repos | Static file hosting | 0 RMB |
 | FC | 1M requests/month | ~thousands of requests | 0 RMB |
-| Total | | | **< 1 RMB/month** |
+| OSS | ~5GB egress/month | ~10MB storage + minimal traffic | < 1 RMB/month |
+| **Total** | | | **< 1 RMB/month** |
 
 ## Troubleshooting
 
 ### CORS errors
 
-If you see CORS errors in the browser console, verify:
-1. FC function returns proper `Access-Control-Allow-Origin: *` headers (already in the code)
-2. HTTP trigger is set to **Anonymous** authentication
-3. HTTP trigger methods include **OPTIONS**
+1. FC HTTP trigger must be set to **Anonymous** authentication
+2. FC HTTP trigger methods must include **OPTIONS**
+3. FC 3.0 automatically handles CORS headers — do not add duplicate `Access-Control-Allow-Origin` in your function code
 
 ### Data not showing in PC dashboard
 
@@ -186,4 +205,4 @@ If you see CORS errors in the browser console, verify:
 
 ### 404 on page refresh
 
-This is the SPA routing issue. Use **Option A (Hash Router)** above for the quickest fix.
+The `public/404.html` handles SPA redirect for GitHub Pages. If it's missing or broken, copy it from the repository.
