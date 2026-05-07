@@ -7,8 +7,8 @@
 
 | 端 | 地址 |
 |---|---|
-| 📱 手机原型 | [luyi-chen.github.io/sales-lead-agent/](https://luyi-chen.github.io/sales-lead-agent/) |
-| 📊 PC 分析看板 | [luyi-chen.github.io/sales-lead-agent/analytics](https://luyi-chen.github.io/sales-lead-agent/analytics) |
+| 📱 手机端原型 | [https://luyi-chen.github.io/sales-lead-agent/](https://luyi-chen.github.io/sales-lead-agent/) |
+| 📊 PC端分析看板 | [https://luyi-chen.github.io/sales-lead-agent/analytics](https://luyi-chen.github.io/sales-lead-agent/analytics) |
 
 ## 部署架构
 
@@ -158,6 +158,8 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 | 帮助 | "你能做什么" | 功能说明 |
 
 意图识别引擎位置：`src/components/chat/ChatTab.tsx` 第 584 行 `detectIntent()` 函数。
+
+**对话意图筛选优化**：用户在对话中通过自然语言筛选（如行业、区域）时，卡片列表现在会精确展示筛选后的标讯数据，而不是全部数据。支持行业/区域筛选后精确展示对应标讯卡片，确保筛选结果与用户意图一致。
 
 **对话窗口标讯卡片**：对话中展示的关联商机标讯卡片已与通用列表卡片（`BidCard`）样式统一，采用三行布局：
 - 第一行：状态标签 + 行业标签 + 关联商机数（如「可能关联3条商机」）
