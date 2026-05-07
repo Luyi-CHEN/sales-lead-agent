@@ -8,7 +8,7 @@ import { industryColors } from '@/data/mock-data'
 import {
   MapPin, Clock, Building2, Phone, User, Tag,
   Link2, XCircle, PlusCircle, ExternalLink, Share2,
-  Banknote, Calendar, Layers, Globe
+  Banknote, Calendar, Layers, Globe, FileText, ChevronRight
 } from 'lucide-react'
 // Phone number masking — prototype demo only, prevent testers from calling real contacts
 function maskPhone(phone: string): string {
@@ -34,10 +34,10 @@ import { CreateOpportunitySheet } from '@/components/bid/CreateOpportunitySheet'
 import { useToast } from '@/components/ui/toast'
 
 const statusConfig = {
-  pending: { label: '待处理', variant: 'new' as const },
-  linked: { label: '已关联商机', variant: 'done' as const },
-  no_opportunity: { label: '无商机反馈', variant: 'destructive' as const },
-  new_opportunity: { label: '已新建商机', variant: 'done' as const },
+  pending: { label: '已分配（待跟进）', variant: 'new' as const },
+  linked: { label: '已反馈（关联已有商机）', variant: 'done' as const },
+  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' as const },
+  new_opportunity: { label: '已反馈（新商机）', variant: 'done' as const },
 }
 
 export function DetailPage() {
@@ -84,7 +84,7 @@ export function DetailPage() {
   }
 
   const handleCreate = () => {
-    updateBidStatus(bid.id, 'new_opportunity')
+    updateBidStatus(bid.id, 'new_opportunity', 'T023043423X')
     setShowCreateSheet(false)
     showToast('新商机创建成功', 'success')
   }
@@ -172,6 +172,27 @@ export function DetailPage() {
           </p>
         </div>
 
+        {/* 标讯一纸通入口 */}
+        <div
+          className="bg-card mx-4 mt-3 rounded-xl border p-4 cursor-pointer active:bg-accent transition-colors"
+          style={{ boxShadow: 'var(--shadow-card)' }}
+          onClick={() => navigate(`/bid/${bid.id}/one-pager`)}
+          data-track="查看标讯一纸通"
+          data-track-type="标讯浏览"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">标讯一纸通</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="text-xs">查看详情</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">客户基础信息、IT战略方向、历史合作等深度分析</p>
+        </div>
+
         {/* Contact Section (only if contact info available) */}
         {(bid.contactPerson || bid.contactPhone) ? (
           <div className="bg-card mx-4 mt-3 rounded-xl border p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -226,13 +247,15 @@ export function DetailPage() {
         </div>
 
         {/* Related Opportunity (if linked) */}
-        {bid.status === 'linked' && bid.relatedOpportunityId && (
+        {(bid.status === 'linked' || bid.status === 'new_opportunity') && bid.relatedOpportunityId && (
           <div className="bg-success-muted mx-4 mb-4 rounded-xl border border-success/20 p-4">
             <div className="flex items-center gap-2 mb-1">
               <Link2 className="h-4 w-4 text-success" />
-              <span className="text-xs font-semibold text-success">已关联商机</span>
+              <span className="text-xs font-semibold text-success">
+                {bid.status === 'linked' ? '已关联商机' : '新建商机'}
+              </span>
             </div>
-            <p className="text-sm font-medium text-foreground">{bid.relatedOpportunityId}</p>
+            <p className="text-sm font-medium text-foreground">商机编号：{bid.relatedOpportunityId}</p>
           </div>
         )}
       </div>

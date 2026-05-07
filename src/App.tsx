@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ui/toast'
 import { HomePage } from '@/pages/HomePage'
 import { DetailPage } from '@/pages/DetailPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
+import { BidOnePagerPage } from '@/pages/BidOnePagerPage'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/bid/:id" element={<DetailPage />} />
+                      <Route path="/bid/:id/one-pager" element={<BidOnePagerPage />} />
                     </Routes>
                   </div>
                 }

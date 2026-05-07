@@ -6,9 +6,10 @@ import {
   procurementModeOptions,
   productDomainOptions,
   winRateOptions,
+  materialProductGroups,
 } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
-import { X, Sparkles, ChevronDown } from 'lucide-react'
+import { X, Sparkles, ChevronDown, Trash2 } from 'lucide-react'
 
 interface CreateOpportunitySheetProps {
   bid: BidInfo
@@ -17,11 +18,6 @@ interface CreateOpportunitySheetProps {
 }
 
 export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportunitySheetProps) {
-  // 计算产品总金额（元）= 预算金额（万元）× 10000
-  const budgetInYuan = bid.budgetAmount
-    ? String(Math.round(parseFloat(bid.budgetAmount.replace(/,/g, '')) * 10000))
-    : ''
-
   // 系统根据标讯信息自动预填字段
   const [formData, setFormData] = useState({
     bu: 'ISG',                              // 事业部，默认ISG
@@ -31,13 +27,18 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     stage: '发现需求',                       // 商机阶段，默认发现需求
     procurementMode: '普通采购',             // 采购模式，默认普通采购
     productDomain: '标准产品',               // 产品域，默认标准产品
-    expectedSignDate: bid.startDate || '',   // 预计签约日期 = 标讯预计采购开始时间
+    expectedSignDate: '',                    // 预计签约日期
     winRate: '10%(项目筹备期)',              // 赢率，默认10%
-    totalAmount: budgetInYuan,               // 产品总金额（元）
-    totalQuantity: bid.totalQuantity || '',  // 主机总台数
-    hasSolutionOpportunity: '',              // 是否有解决方案机会（非自动填充，用户手选）
+    hasSolutionOpportunity: '',              // 是否有解决方案机会
     remark: '',                              // 备注，默认为空
   })
+
+  // 产品明细数组状态
+  const [productDetails, setProductDetails] = useState<Array<{
+    materialGroupId: string
+    productLine: string
+    estimatedAmount: string
+  }>>([{ materialGroupId: '', productLine: '', estimatedAmount: '' }])
 
   // 管理各下拉框展开状态
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -50,7 +51,32 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     setFormData(prev => ({ ...prev, [key]: val }))
   }
 
-  const canSubmit = formData.name.trim() && formData.customer.trim()
+  const handleMaterialGroupChange = (index: number, groupId: string) => {
+    const group = materialProductGroups.find(g => g.id === groupId)
+    setProductDetails(prev => prev.map((item, i) =>
+      i === index ? { ...item, materialGroupId: groupId, productLine: group?.productLine || '' } : item
+    ))
+  }
+
+  const handleProductDetailChange = (index: number, field: 'estimatedAmount', value: string) => {
+    setProductDetails(prev => prev.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    ))
+  }
+
+  const addProductDetail = () => {
+    setProductDetails(prev => [...prev, { materialGroupId: '', productLine: '', estimatedAmount: '' }])
+  }
+
+  const removeProductDetail = (index: number) => {
+    setProductDetails(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const isFormValid =
+    formData.bu && formData.source && formData.name && formData.customer &&
+    formData.stage && formData.procurementMode && formData.productDomain &&
+    formData.expectedSignDate && formData.winRate && formData.hasSolutionOpportunity &&
+    productDetails.every(p => p.materialGroupId && p.estimatedAmount)
 
   return (
     <>
@@ -91,8 +117,14 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
           <div className="overflow-y-auto scrollbar-hide px-4" style={{ maxHeight: '55vh' }}>
             <div className="flex flex-col gap-3 pb-3">
 
-              {/* 事业部 - 下拉选项（仅ISG） */}
-              <FormField label="事业部" required prefilled>
+              {/* ═══ 基本信息区域 ═══ */}
+              <div className="mb-3 mt-4 flex items-center gap-2">
+                <div className="h-4 w-1 rounded-full bg-primary"></div>
+                <h3 className="text-sm font-semibold text-foreground">基本信息</h3>
+              </div>
+
+              {/* 事业部 */}
+              <FormField label="事业部" required prefilled="自动填充标讯BU">
                 <DropdownSelect
                   value={formData.bu}
                   options={buOptions}
@@ -102,8 +134,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 商机来源 - 文本框 */}
-              <FormField label="商机来源" prefilled>
+              {/* 商机来源 */}
+              <FormField label="商机来源" required>
                 <input
                   type="text"
                   value={formData.source}
@@ -112,8 +144,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 商机名称 - 文本框，取标讯项目名称 */}
-              <FormField label="商机名称" required prefilled>
+              {/* 商机名称 */}
+              <FormField label="商机名称" required prefilled="自动填充标讯项目名称">
                 <input
                   type="text"
                   value={formData.name}
@@ -122,8 +154,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 客户名称 - 文本框，取标讯采购单位 */}
-              <FormField label="客户名称" required prefilled>
+              {/* 客户名称 */}
+              <FormField label="客户名称" required prefilled="自动填充标讯采购单位">
                 <input
                   type="text"
                   value={formData.customer}
@@ -132,8 +164,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 商机阶段 - 下拉选项 */}
-              <FormField label="商机阶段">
+              {/* 商机阶段 */}
+              <FormField label="商机阶段" required>
                 <DropdownSelect
                   value={formData.stage}
                   options={opportunityStages}
@@ -143,8 +175,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 采购模式 - 下拉选项 */}
-              <FormField label="采购模式" prefilled>
+              {/* 采购模式 */}
+              <FormField label="采购模式" required>
                 <DropdownSelect
                   value={formData.procurementMode}
                   options={procurementModeOptions}
@@ -154,8 +186,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 产品域 - 下拉选项 */}
-              <FormField label="产品域" prefilled>
+              {/* 产品域 */}
+              <FormField label="产品域" required>
                 <DropdownSelect
                   value={formData.productDomain}
                   options={productDomainOptions}
@@ -165,30 +197,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 产品总金额（元）+ 主机总台数 两列 */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <FormField label="产品总金额（元）" prefilled>
-                  <input
-                    type="number"
-                    value={formData.totalAmount}
-                    onChange={e => update('totalAmount', e.target.value)}
-                    placeholder="0"
-                    className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </FormField>
-                <FormField label="主机总台数" prefilled>
-                  <input
-                    type="number"
-                    value={formData.totalQuantity}
-                    onChange={e => update('totalQuantity', e.target.value)}
-                    placeholder="0"
-                    className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </FormField>
-              </div>
-
-              {/* 预计签约日期 - 日期格式字段 */}
-              <FormField label="预计签约日期" prefilled>
+              {/* 预计签约日期 */}
+              <FormField label="预计签约日期" required>
                 <input
                   type="date"
                   value={formData.expectedSignDate}
@@ -197,8 +207,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 赢率 - 下拉选项 */}
-              <FormField label="赢率（Winrate）" prefilled>
+              {/* 赢率 */}
+              <FormField label="赢率" required>
                 <DropdownSelect
                   value={formData.winRate}
                   options={winRateOptions}
@@ -208,8 +218,8 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 是否有解决方案机会 - 下拉选项（非自动填充） */}
-              <FormField label="是否有解决方案机会">
+              {/* 是否有解决方案机会 */}
+              <FormField label="是否有解决方案机会" required>
                 <DropdownSelect
                   value={formData.hasSolutionOpportunity || '请选择'}
                   options={['是', '否']}
@@ -219,7 +229,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 备注 - 段落文本框 */}
+              {/* 备注 */}
               <FormField label="备注">
                 <textarea
                   value={formData.remark}
@@ -229,6 +239,70 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                   className="w-full rounded-lg border bg-secondary p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
               </FormField>
+
+              {/* ═══ 产品明细区域 ═══ */}
+              <div className="mb-3 mt-4 flex items-center gap-2">
+                <div className="h-4 w-1 rounded-full bg-primary"></div>
+                <h3 className="text-sm font-semibold text-foreground">产品明细</h3>
+              </div>
+
+              {productDetails.map((detail, index) => (
+                <div key={index} className="rounded-lg border border-border/50 bg-muted/30 p-3 mb-3">
+                  {/* 组头：第N组 + 删除按钮 */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-muted-foreground">第{index + 1}组</span>
+                    {productDetails.length > 1 && (
+                      <button
+                        onClick={() => removeProductDetail(index)}
+                        className="flex items-center gap-1 text-xs text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        删除
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 物料产品组 */}
+                  <FormField label="物料产品组" required>
+                    <ObjectDropdownSelect
+                      value={detail.materialGroupId}
+                      items={materialProductGroups}
+                      isOpen={openDropdown === `materialGroup_${index}`}
+                      onToggle={() => toggleDropdown(`materialGroup_${index}`)}
+                      onSelect={(id) => { handleMaterialGroupChange(index, id); setOpenDropdown(null) }}
+                    />
+                  </FormField>
+
+                  {/* 产线 - 只读 */}
+                  <FormField label="产线">
+                    <input
+                      type="text"
+                      value={detail.productLine}
+                      readOnly
+                      className="h-10 w-full rounded-lg border bg-muted px-3 text-sm text-muted-foreground focus:outline-none cursor-not-allowed"
+                    />
+                  </FormField>
+
+                  {/* 预计收入总金额（元） */}
+                  <FormField label="预计收入总金额（元）" required>
+                    <input
+                      type="number"
+                      value={detail.estimatedAmount}
+                      onChange={e => handleProductDetailChange(index, 'estimatedAmount', e.target.value)}
+                      placeholder="0"
+                      className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </FormField>
+                </div>
+              ))}
+
+              {/* 添加产品明细按钮 */}
+              <button
+                onClick={addProductDetail}
+                className="w-full rounded-lg border border-dashed border-primary/50 py-2 text-xs text-primary"
+              >
+                + 添加产品明细
+              </button>
             </div>
           </div>
 
@@ -237,7 +311,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
             <Button
               size="full"
               variant="success"
-              disabled={!canSubmit}
+              disabled={!isFormValid}
               onClick={onSubmit}
             >
               确认创建商机
@@ -249,7 +323,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
   )
 }
 
-/** 通用下拉选择器 */
+/** 通用下拉选择器（字符串选项） */
 function DropdownSelect({ value, options, isOpen, onToggle, onSelect }: {
   value: string
   options: string[]
@@ -288,10 +362,52 @@ function DropdownSelect({ value, options, isOpen, onToggle, onSelect }: {
   )
 }
 
+/** 对象下拉选择器（id/name 选项，支持下拉展示name，选中后存id） */
+function ObjectDropdownSelect({ value, items, isOpen, onToggle, onSelect }: {
+  value: string
+  items: Array<{ id: string; name: string }>
+  isOpen: boolean
+  onToggle: () => void
+  onSelect: (id: string) => void
+}) {
+  const selectedItem = items.find(item => item.id === value)
+  const displayValue = selectedItem?.name || '请选择'
+
+  return (
+    <div className="relative">
+      <button
+        onClick={onToggle}
+        className="flex h-10 w-full items-center justify-between rounded-lg border bg-secondary px-3 text-sm text-foreground"
+      >
+        <span>{displayValue}</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-11 z-10 rounded-lg border bg-card py-1 animate-scale-in max-h-48 overflow-y-auto"
+          style={{ boxShadow: 'var(--shadow-elevated)' }}>
+          {items.map(item => (
+            <button
+              key={item.id}
+              onClick={() => onSelect(item.id)}
+              className={`w-full px-3 py-2 text-left text-sm ${
+                value === item.id
+                  ? 'bg-accent font-semibold text-primary'
+                  : 'text-foreground active:bg-secondary'
+              }`}
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FormField({ label, required, prefilled, children }: {
   label: string
   required?: boolean
-  prefilled?: boolean
+  prefilled?: boolean | string
   children: React.ReactNode
 }) {
   return (
@@ -301,7 +417,7 @@ function FormField({ label, required, prefilled, children }: {
         {required && <span className="text-2xs text-destructive">*</span>}
         {prefilled && (
           <span className="rounded bg-accent px-1 py-0.5 text-[9px] font-medium text-primary">
-            自动填充
+            {typeof prefilled === 'string' ? prefilled : '自动填充'}
           </span>
         )}
       </div>

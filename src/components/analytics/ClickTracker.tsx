@@ -7,6 +7,7 @@ import { useAnalytics } from '@/store/analytics-store'
  */
 function getPageName(pathname: string): string {
   if (pathname === '/' || pathname === '') return '首页'
+  if (pathname.startsWith('/bid/') && pathname.endsWith('/one-pager')) return '标讯一纸通'
   if (pathname.startsWith('/bid/')) return '标讯详情'
   if (pathname.startsWith('/analytics')) return '分析看板'
   return pathname.replace(/^\//, '')

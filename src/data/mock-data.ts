@@ -608,3 +608,88 @@ export const industryColors: Record<string, string> = {
   '医疗卫生': 'bg-success-muted text-success',
   '政府': 'bg-warning-muted text-warning',
 }
+
+export const materialProductGroups = [
+  { id: '1', name: '企业级System x(A7)', productLine: 'A7产品组产品线' },
+  { id: '2', name: 'B7企业级服务器(B7)', productLine: 'XC' },
+  { id: '3', name: 'B7企业级服务器(B7)', productLine: 'XC' },
+  { id: '4', name: '企业级存储-NAS(16)', productLine: 'SAN-NAS' },
+  { id: '5', name: '企业级存储-SAN(18)', productLine: 'SAN-NAS' },
+]
+
+// 标讯一纸通数据结构
+export interface BidOnePagerData {
+  customerInfo: {
+    customerName: string
+    uid: string
+    region: string
+    industryManager: string
+    subIndustry: string
+  }
+  itStrategy: string
+  itSpending: {
+    total: number
+    external: number
+    internal: number
+    lenovoShare: {
+      total: number
+      desktop: number
+      enterprise: number
+      software: number
+    }
+  }
+  productParticipation: {
+    desktop: number
+    enterprise: number
+    software: number
+  }
+  sowProducts: Array<{ name: string; percentage: number; color: string }>
+  historicalCooperation: {
+    data: Array<{ year: string; REL: number; ISG: number; SSG: number }>
+  }
+  businessAnalysis: string
+  recentNews: string
+  caseStudy: string
+}
+
+export const mockBidOnePager: BidOnePagerData = {
+  customerInfo: {
+    customerName: '深圳荣耀智能机器有限公司',
+    uid: 'UID000339406',
+    region: '深琼战区 / 制造',
+    industryManager: '张浩 (ZHANGHAO39)',
+    subIndustry: '离散轻工',
+  },
+  itStrategy: '荣耀终端的IT信息化战略方向核心是构建以人工智能为核心的开放生态，实现从智能终端制造商向全球领先的AI终端生态运营者的转型。其战略体系可概括为"三步走"远景和"1x3×N"实施框架，具体体现在以下层面：荣耀的IT信息化战略以AI智能体为引擎，通过开放平台聚合生态伙伴，致力于构建跨设备、跨场景的泛化智能服务体系，其核心是从底层技术到商业生态的全维度价值重构。',
+  itSpending: {
+    total: 80,
+    external: 70,
+    internal: 10,
+    lenovoShare: {
+      total: 70,
+      desktop: 40,
+      enterprise: 5,
+      software: 5,
+    },
+  },
+  productParticipation: {
+    desktop: 40,
+    enterprise: 5,
+    software: 5,
+  },
+  sowProducts: [
+    { name: 'PC', percentage: 20, color: '#8B5CF6' },
+    { name: '存储', percentage: 60, color: '#EC4899' },
+    { name: '服务器', percentage: 1, color: '#F97316' },
+  ],
+  historicalCooperation: {
+    data: [
+      { year: 'FY2023', REL: 10000, ISG: 2000, SSG: 1500 },
+      { year: 'FY2024', REL: 12000, ISG: 4500, SSG: 2000 },
+      { year: 'FY2025', REL: 12500, ISG: 6000, SSG: 4000 },
+    ],
+  },
+  businessAnalysis: '荣耀终端近三年营收保持稳健增长态势，FY2025实现营收约580亿元，同比增长12%。主营业务方面，智能手机仍占营收主体（约65%），但IoT与智慧生活产品增速显著（同比+28%）。创新业务层面，荣耀加速布局AI大模型端侧部署，MagicOS 9.0全面接入端云协同AI能力，同时积极拓展企业级解决方案市场，面向教育、医疗等垂直行业推出定制化终端产品组合。',
+  recentNews: '【PC硬件】荣耀近期发布新一代MagicBook商用笔记本系列，主打AI本地化能力和企业安全管理特性，计划在教育和政企市场大规模推广，预计Q3采购需求集中释放。\n\n【服务器/基础设施】荣耀研发中心正在扩建内部AI训练集群，对高性能GPU服务器和存储设备有明确采购计划，预算规模约2000万元，预计下半年启动招标。\n\n【方案服务】荣耀全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，存在大型基础设施一体化解决方案合作机会。',
+  caseStudy: '某制造型企业基础设施一体化建设项目\n\nFY25Q3，联想XX战区，深入调研分析某制造型企业客户XXX在基础设施建设上的XXXX需求痛点，AR（chenly15）、SS（chenly16）、SE（chenly17）通力合作，提供了联想XXXXXX产品/服务，成功签约 XXXXX金额的订单。',
+}
