@@ -327,7 +327,6 @@ interface BidInfo {
   cdbId?: string             // 客户主数据库唯一编号
   // 状态：pending=已分配(待跟进)；no_opportunity/new_opportunity=已反馈（分别对应无商机/新商机）
   status: 'pending' | 'no_opportunity' | 'new_opportunity'
-  isRead: boolean
 }
 ```
 
