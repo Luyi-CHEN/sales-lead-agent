@@ -204,16 +204,16 @@ export function DetailPage() {
                 </div>
               </div>
               {bid.contactPhone && (
-                <a
-                  href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-success-foreground"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    window.alert(`原型演示模式\n\n拨号号码（已脱敏）：${maskPhone(bid.contactPhone)}`)
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-success-foreground active:scale-95 transition-transform"
+                  onClick={() => {
+                    showToast(`原型演示模式 - 拨号号码（已脱敏）：${maskPhone(bid.contactPhone)}`, 'info')
                   }}
+                  data-track="拨号采购人"
+                  data-track-type="标讯操作"
                 >
                   <Phone className="h-4 w-4" />
-                </a>
+                </button>
               )}
             </div>
           </div>
