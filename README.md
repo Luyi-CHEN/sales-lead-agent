@@ -113,7 +113,6 @@ src/
 │   ├── bid/
 │   │   ├── BidCard.tsx                  # 标讯卡片组件
 │   │   ├── BidListTab.tsx              # 标讯列表 + 筛选
-│   │   ├── LinkOpportunitySheet.tsx    # 关联已有商机弹窗
 │   │   ├── CreateOpportunitySheet.tsx  # 新建商机弹窗
 │   │   ├── NoOpportunitySheet.tsx      # 标记无商机弹窗
 │   │   └── BidOnePager.tsx             # 标讯一纸通展示组件
@@ -153,44 +152,43 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 | 预算筛选 | "预算超过500万" | 大项目排序列表（自动提取数字阈值） |
 | 查看全部 | "所有标讯" | 完整列表 |
 | 待处理 | "新的标讯" | 待处理标讯 |
-| 商机关联 | "有哪些可以关联商机" | 匹配商机的标讯 |
 | 关键词搜索 | "服务器"、"GPU" | 搜索标讯名称/摘要/关键词 |
 | 帮助 | "你能做什么" | 功能说明 |
 
 意图识别引擎位置：`src/components/chat/ChatTab.tsx` 第 584 行 `detectIntent()` 函数。
 
-**对话意图筛选优化**：用户在对话中通过自然语言筛选（如行业、区域）时，卡片列表现在会精确展示筛选后的标讯数据，而不是全部数据。支持行业/区域筛选后精确展示对应标讯卡片，确保筛选结果与用户意图一致。
+**对话意图筛选优化**：用户在对话中通过自然语言筛选（如行业、区域）时，卡片列表会精确展示筛选后的标讯数据，而不是全部数据。支持行业/区域筛选后精确展示对应标讯卡片，确保筛选结果与用户意图一致。
 
-**对话窗口标讯卡片**：对话中展示的关联商机标讯卡片已与通用列表卡片（`BidCard`）样式统一，采用三行布局：
-- 第一行：状态标签 + 行业标签 + 关联商机数（如「可能关联3条商机」）
+**对话窗口标讯卡片**：对话中展示的标讯卡片默认只展示前 3 条，不提供展开按钮，用户可通过快捷操作「查看全部标讯」查看完整列表。卡片样式与通用列表卡片（`BidCard`）统一，采用三行布局：
+- 第一行：状态标签 + 行业标签
 - 第二行：项目名称
 - 第三行：地区城市 + 截止日期 + 预算金额
-
-所有默认展示的 3 条关联商机标讯均正确显示关联标签，确保信息展示完整一致。
 
 ### 2. 标讯详情页
 
 - 标讯基本信息展示（项目名称、采购单位、预算金额、截止时间等）
+- CDBID 展示（有值显示编号，无值显示"暂无"）
 - 采购需求概况
 - **标讯一纸通入口卡片**：点击跳转至独立页面（路由 `/bid/:id/one-pager`），展示客户全景画像
 - 匹配原因标签（替代传统的匹配百分比分数）
 - 采购人联系方式（电话脱敏显示 + 拨号脱敏保护）
 - 原始公告链接跳转
-- 三种商机操作：关联已有商机 / 新建商机 / 标记无商机
+- 两种商机操作：新建商机 / 标记无商机
 
 **标讯状态流转：**
 
 | 状态值 | 用户可见名称 | 说明 |
 |--------|-------------|------|
 | `pending` | 已分配（待跟进） | 用户看到的默认初始状态 |
-| `linked` | 已反馈（关联已有商机） | 详情页操作后自动流转，展示选中的商机编号 |
 | `no_opportunity` | 已反馈（无商机） | 详情页操作后自动流转 |
 | `new_opportunity` | 已反馈（新商机） | 详情页操作后自动流转，默认关联编号 `T023043423X` |
 
 **新建商机表单**（分为两个模块）：
 
-- **基本信息**：事业部、商机来源、商机名称、客户名称、商机阶段、采购模式、产品域、预计签约日期、赢率、是否有解决方案机会、备注（除备注外全部必填）
+- **基本信息**：CDBID（必填，有值时只读展示，无值时内联搜索框支持按CDBID/客户名称模糊搜索选择）、事业部、商机来源、商机名称、客户名称、商机阶段、采购模式、产品域、预计签约日期、赢率、是否有解决方案机会、备注（除备注外全部必填）
 - **产品明细**：支持多组，每组包含物料产品组（下拉联动）、产线（只读自动带出）、预计收入总金额（元）
+  - 产品域选择"简单方案"时，新增「方案/立项产品组」下拉，选择后自动填充物料产品组（可编辑）和产线（只读）
+  - 产品域切换时自动重置产品明细
 
 物料产品组与产线映射：
 
@@ -213,7 +211,7 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 - **历史合作**：柱状图 + 表格双视图展示历年合作金额
 - **经营分析**：文本区块展示客户经营洞察
 - **近期动态**：文本区块展示客户最新动态
-- **历史案例推荐**：文本区块展示推荐案例
+- **历史案例推荐**：展示银行基础设施一体化建设项目标杆案例，采用普通段落样式（无特殊加粗/引用框）
 
 所有图表均采用纯 CSS 实现，无需引入图表库，保持轻量化。
 
@@ -323,11 +321,10 @@ interface BidInfo {
   contactPhone: string       // 采购人电话
   contactPerson: string      // 采购人联系人
   sourceUrl: string          // 原始公告链接
-  // 状态：pending=已分配(待跟进)；linked/no_opportunity/new_opportunity=已反馈（分别对应关联已有商机/无商机/新商机）
-  status: 'pending' | 'linked' | 'no_opportunity' | 'new_opportunity'
+  cdbId?: string             // 客户主数据库唯一编号
+  // 状态：pending=已分配(待跟进)；no_opportunity/new_opportunity=已反馈（分别对应无商机/新商机）
+  status: 'pending' | 'no_opportunity' | 'new_opportunity'
   isRead: boolean
-  relatedOpportunityCount: number
-  relatedOpportunityId?: string
 }
 ```
 
@@ -421,7 +418,7 @@ VITE_ANALYTICS_API=https://your-fc-trigger-url.cn-beijing.fcapp.run
 | **调整对话意图/话术** | `src/components/chat/ChatTab.tsx` | `detectIntent()` 函数（第 584 行） |
 | **修改标讯详情页布局** | `src/pages/DetailPage.tsx` | 各信息模块展示 |
 | **修改标讯卡片样式** | `src/components/bid/BidCard.tsx` | 列表中每张卡片的展示 |
-| **修改商机操作弹窗** | `src/components/bid/*.Sheet.tsx` | 三个底部操作面板 |
+| **修改商机操作弹窗** | `src/components/bid/*.Sheet.tsx` | 两个底部操作面板 |
 | **修改整体配色** | `src/index.css` | CSS Variables 设计 tokens |
 | **修改路由/页面结构** | `src/App.tsx` | 路由定义 |
 | **修改顶部 Tab** | `src/pages/HomePage.tsx` | 助手/标讯双 Tab 切换 |
@@ -444,7 +441,6 @@ export const api = {
   getBidDetail:     (id: string) => fetch(`${BASE}/bids/${id}`).then(r => r.json()),
   getOpportunities: (q?: string) => fetch(`${BASE}/opportunities?q=${q || ''}`).then(r => r.json()),
   createOpportunity:(data: any) => fetch(`${BASE}/opportunities`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }),
-  linkBid:          (bidId: string, oppId: string) => fetch(`${BASE}/bids/${bidId}/link`, { method: 'POST', body: JSON.stringify({oppId}) }),
   markNoOpportunity:(bidId: string, reason: string) => fetch(`${BASE}/bids/${bidId}/feedback`, { method: 'POST', body: JSON.stringify({reason}) }),
 }
 ```
@@ -473,7 +469,6 @@ export const api = {
 |------|------|------|
 | GET | `/api/bids` | 标讯列表（支持分页、筛选） |
 | GET | `/api/bids/:id` | 标讯详情 |
-| POST | `/api/bids/:id/link` | 关联标讯到已有商机 |
 | POST | `/api/bids/:id/feedback` | 标记无商机（含原因） |
 | GET | `/api/opportunities` | 商机列表（搜索） |
 | POST | `/api/opportunities` | 从标讯新建商机 |
