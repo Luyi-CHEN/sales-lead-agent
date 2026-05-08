@@ -8,7 +8,7 @@ import { industryColors } from '@/data/mock-data'
 import {
   MapPin, Clock, Building2, Phone, User, Tag,
   Link2, XCircle, PlusCircle, ExternalLink, Share2,
-  Banknote, Calendar, Layers, Globe, FileText, ChevronRight
+  Banknote, Calendar, Layers, Globe, FileText, ChevronRight, Hash
 } from 'lucide-react'
 // Phone number masking — prototype demo only, prevent testers from calling real contacts
 function maskPhone(phone: string): string {
@@ -125,12 +125,7 @@ export function DetailPage() {
                 {bid.keywords}
               </span>
             )}
-            {bid.status === 'pending' && bid.relatedOpportunityCount > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-2xs font-medium text-primary ml-auto">
-                <Link2 className="h-2.5 w-2.5" />
-                可能关联 {bid.relatedOpportunityCount} 条商机
-              </span>
-            )}
+
           </div>
           <h1 className="text-lg font-bold text-foreground leading-snug mb-2">
             {bid.projectName}
@@ -153,6 +148,7 @@ export function DetailPage() {
             <InfoCell icon={<Banknote className="h-3.5 w-3.5" />} label="预算金额" value={`${bid.budgetAmount}万元`} highlight />
             <InfoCell icon={<Globe className="h-3.5 w-3.5" />} label="所在区域" value={`${bid.region} · ${bid.city}`} />
             <InfoCell icon={<Building2 className="h-3.5 w-3.5" />} label="事业部" value={bid.bu} />
+            <InfoCell icon={<Hash className="h-3.5 w-3.5" />} label="CDBID" value={bid.cdbId || '暂无'} muted={!bid.cdbId} />
             <InfoCell icon={<Layers className="h-3.5 w-3.5" />} label="标讯类型" value={bid.bidType} />
             <InfoCell icon={<Calendar className="h-3.5 w-3.5" />} label="采购开始" value={bid.startDate} />
             <InfoCell icon={<Clock className="h-3.5 w-3.5" />} label="采购截止" value={bid.deadline} />
@@ -327,15 +323,15 @@ export function DetailPage() {
   )
 }
 
-function InfoCell({ icon, label, value, highlight }: {
-  icon: React.ReactNode; label: string; value: string; highlight?: boolean
+function InfoCell({ icon, label, value, highlight, muted }: {
+  icon: React.ReactNode; label: string; value: string; highlight?: boolean; muted?: boolean
 }) {
   return (
     <div className="flex items-start gap-2">
       <div className="mt-0.5 text-muted-foreground">{icon}</div>
       <div className="min-w-0">
         <p className="text-2xs text-muted-foreground">{label}</p>
-        <p className={`text-sm font-medium truncate ${highlight ? 'text-primary' : 'text-foreground'}`}>
+        <p className={`text-sm font-medium truncate ${highlight ? 'text-primary' : muted ? 'text-muted-foreground' : 'text-foreground'}`}>
           {value}
         </p>
       </div>

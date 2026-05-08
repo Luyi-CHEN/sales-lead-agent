@@ -24,6 +24,7 @@ export interface BidInfo {
   isRead: boolean
   relatedOpportunityCount: number  // 可能关联的商机数量
   relatedOpportunityId?: string
+  cdbId?: string  // 客户主数据库唯一编号
 }
 
 export interface Opportunity {
@@ -42,6 +43,7 @@ export interface Opportunity {
 export const mockBids: BidInfo[] = [
   {
     id: 'BX-2026-001',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '江苏',
@@ -90,6 +92,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-003',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '江苏',
@@ -138,6 +141,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-005',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -186,6 +190,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-007',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -234,6 +239,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-009',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -282,6 +288,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-011',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -330,6 +337,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-013',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -378,6 +386,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-015',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -426,6 +435,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-017',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -474,6 +484,7 @@ export const mockBids: BidInfo[] = [
   },
   {
     id: 'BX-2026-019',
+    cdbId: '30654576X',
     bu: 'ISG',
     bidType: '意向',
     region: '川藏',
@@ -690,5 +701,18 @@ export const mockBidOnePager: BidOnePagerData = {
   },
   businessAnalysis: '荣耀终端近三年营收保持稳健增长态势，FY2025实现营收约580亿元，同比增长12%。主营业务方面，智能手机仍占营收主体（约65%），但IoT与智慧生活产品增速显著（同比+28%）。创新业务层面，荣耀加速布局AI大模型端侧部署，MagicOS 9.0全面接入端云协同AI能力，同时积极拓展企业级解决方案市场，面向教育、医疗等垂直行业推出定制化终端产品组合。',
   recentNews: '【PC硬件】荣耀近期发布新一代MagicBook商用笔记本系列，主打AI本地化能力和企业安全管理特性，计划在教育和政企市场大规模推广，预计Q3采购需求集中释放。\n\n【服务器/基础设施】荣耀研发中心正在扩建内部AI训练集群，对高性能GPU服务器和存储设备有明确采购计划，预算规模约2000万元，预计下半年启动招标。\n\n【方案服务】荣耀全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，存在大型基础设施一体化解决方案合作机会。',
-  caseStudy: '某制造型企业基础设施一体化建设项目\n\nFY25Q3，联想XX战区，深入调研分析某制造型企业客户XXX在基础设施建设上的XXXX需求痛点，AR（chenly15）、SS（chenly16）、SE（chenly17）通力合作，提供了联想XXXXXX产品/服务，成功签约 XXXXX金额的订单。',
+  caseStudy: '推荐参考某大型国有银行基础设施一体化建设项目，这是北京战区金融行业的标杆案例。\n\n该项目针对客户智能化转型的底层算力痛点，由chenly15（AR）chenly16（SS）与chenly17（SE）通力合作，最终成功拿下了500万美元的大额订单，并于FY25Q3完成签约下单。',
+}
+
+export const mockCustomerDatabase = [
+  { cdbId: '30654576X', name: '南京医科大学（本部）' },
+  { cdbId: '20987431A', name: '安徽材料工程学校' },
+  { cdbId: '40123876B', name: '东海县人民医院' },
+  { cdbId: '50234987C', name: '天津市公安局河东分局机关' },
+  { cdbId: '60345098D', name: '成都市政府采购中心' },
+]
+
+export const solutionProductGroups: Record<string, { name: string; materialGroupId: string; materialGroupName: string; productLine: string }> = {
+  '1': { name: '测试方案产品组1', materialGroupId: '1', materialGroupName: '企业级System x(A7)', productLine: 'A7产品组产品线' },
+  '2': { name: '测试方案产品组2', materialGroupId: '2', materialGroupName: 'B7企业级服务器(B7)', productLine: 'XC' },
 }

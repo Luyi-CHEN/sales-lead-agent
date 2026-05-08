@@ -287,19 +287,11 @@ export function BidOnePager() {
           历史案例推荐
         </h3>
         <div className="rounded-xl border bg-card p-4">
-          {data.caseStudy.split('\n\n').map((block, idx) => {
-            const lines = block.split('\n')
-            const title = lines[0]
-            const body = lines.slice(1).join('\n')
-            return (
-              <div key={idx}>
-                <div className="font-semibold text-sm mb-2">{title}</div>
-                {body && (
-                  <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
-                )}
-              </div>
-            )
-          })}
+          {data.caseStudy.split('\n\n').map((paragraph, idx) => (
+            <p key={idx} className="text-sm leading-relaxed text-foreground">
+              {paragraph}
+            </p>
+          ))}
         </div>
       </section>
     </div>

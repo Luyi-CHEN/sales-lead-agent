@@ -7,9 +7,11 @@ import {
   productDomainOptions,
   winRateOptions,
   materialProductGroups,
+  mockCustomerDatabase,
+  solutionProductGroups,
 } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
-import { X, Sparkles, ChevronDown, Trash2 } from 'lucide-react'
+import { X, Sparkles, ChevronDown, Trash2, Search } from 'lucide-react'
 
 interface CreateOpportunitySheetProps {
   bid: BidInfo
@@ -24,6 +26,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     source: '标讯转化',                      // 商机来源，默认标讯转化
     name: bid.projectName || '',             // 商机名称 = 标讯项目名称
     customer: bid.procurementUnit || '',     // 客户名称 = 标讯采购单位
+    cdbId: bid.cdbId || '',                  // CDBID
     stage: '发现需求',                       // 商机阶段，默认发现需求
     procurementMode: '普通采购',             // 采购模式，默认普通采购
     productDomain: '标准产品',               // 产品域，默认标准产品
@@ -33,12 +36,16 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     remark: '',                              // 备注，默认为空
   })
 
+  // CDBID 搜索状态
+  const [cdbSearchQuery, setCdbSearchQuery] = useState('')
+
   // 产品明细数组状态
   const [productDetails, setProductDetails] = useState<Array<{
     materialGroupId: string
     productLine: string
     estimatedAmount: string
-  }>>([{ materialGroupId: '', productLine: '', estimatedAmount: '' }])
+    solutionGroupId?: string
+  }>>([{ materialGroupId: '', productLine: '', estimatedAmount: '', solutionGroupId: '' }])
 
   // 管理各下拉框展开状态
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -58,25 +65,75 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     ))
   }
 
+  const handleSolutionGroupChange = (index: number, solutionGroupId: string) => {
+    const group = solutionProductGroups[solutionGroupId]
+    if (group) {
+      setProductDetails(prev => prev.map((item, i) =>
+        i === index ? {
+          ...item,
+          solutionGroupId,
+          materialGroupId: group.materialGroupId,
+          productLine: group.productLine
+        } : item
+      ))
+    }
+  }
+
+  const handleProductDomainChange = (val: string) => {
+    update('productDomain', val)
+    setOpenDropdown(null)
+    // 产品域切换时重置所有产品明细行的方案产品组和关联字段
+    setProductDetails(prev => prev.map(item => ({
+      ...item,
+      solutionGroupId: '',
+      materialGroupId: '',
+      productLine: '',
+    })))
+  }
+
+  const addProductDetail = () => {
+    setProductDetails(prev => [...prev, { materialGroupId: '', productLine: '', estimatedAmount: '', solutionGroupId: '' }])
+  }
+
   const handleProductDetailChange = (index: number, field: 'estimatedAmount', value: string) => {
     setProductDetails(prev => prev.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     ))
   }
 
-  const addProductDetail = () => {
-    setProductDetails(prev => [...prev, { materialGroupId: '', productLine: '', estimatedAmount: '' }])
-  }
-
   const removeProductDetail = (index: number) => {
     setProductDetails(prev => prev.filter((_, i) => i !== index))
   }
 
-  const isFormValid =
-    formData.bu && formData.source && formData.name && formData.customer &&
-    formData.stage && formData.procurementMode && formData.productDomain &&
-    formData.expectedSignDate && formData.winRate && formData.hasSolutionOpportunity &&
-    productDetails.every(p => p.materialGroupId && p.estimatedAmount)
+  const isFormValid = (() => {
+    // 基本信息必填字段验证
+    const basicFieldsValid = !!(
+      formData.bu?.trim() &&
+      formData.source?.trim() &&
+      formData.name?.trim() &&
+      formData.customer?.trim() &&
+      formData.cdbId?.trim() &&
+      formData.stage?.trim() &&
+      formData.procurementMode?.trim() &&
+      formData.productDomain?.trim() &&
+      formData.expectedSignDate?.trim() &&
+      formData.winRate?.trim() &&
+      formData.hasSolutionOpportunity?.trim()
+    )
+    if (!basicFieldsValid) return false
+
+    // 产品明细行验证
+    return productDetails.every(p => {
+      if (!p.estimatedAmount?.trim()) return false
+
+      if (formData.productDomain === '简单方案') {
+        // 简单方案：要求 solutionGroupId
+        return !!p.solutionGroupId?.trim()
+      }
+      // 标准产品 / KT：不要求 solutionGroupId，要求 materialGroupId
+      return !!p.materialGroupId?.trim()
+    })
+  })()
 
   return (
     <>
@@ -164,6 +221,72 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
+              {/* CDBID */}
+              <FormField label="CDBID" required prefilled={bid.cdbId ? '自动填充标讯CDBID' : false}>
+                {bid.cdbId ? (
+                  /* 模式A：有CDBID，只读展示 */
+                  <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                    {bid.cdbId}
+                  </div>
+                ) : (
+                  /* 模式B：无CDBID，搜索输入框 */
+                  <div>
+                    {formData.cdbId ? (
+                      /* 已选中状态 */
+                      <div className="flex h-10 w-full items-center justify-between rounded-lg border bg-muted px-3 text-sm text-muted-foreground">
+                        <span>{formData.cdbId}</span>
+                        <button
+                          type="button"
+                          onClick={() => { update('cdbId', ''); setCdbSearchQuery('') }}
+                          className="text-xs text-primary hover:text-primary/80"
+                        >
+                          清除
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="text"
+                            value={cdbSearchQuery}
+                            onChange={e => setCdbSearchQuery(e.target.value)}
+                            placeholder="搜索CDBID或客户名称"
+                            className="h-10 w-full rounded-lg border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </div>
+                        {cdbSearchQuery && (
+                          <div className="border rounded-lg mt-1 max-h-40 overflow-y-auto bg-muted/50 py-1">
+                            {mockCustomerDatabase.filter(c =>
+                              c.cdbId.toLowerCase().includes(cdbSearchQuery.toLowerCase()) ||
+                              c.name.toLowerCase().includes(cdbSearchQuery.toLowerCase())
+                            ).length === 0 ? (
+                              <div className="px-3 py-2 text-sm text-muted-foreground">无匹配结果</div>
+                            ) : (
+                              mockCustomerDatabase.filter(c =>
+                                c.cdbId.toLowerCase().includes(cdbSearchQuery.toLowerCase()) ||
+                                c.name.toLowerCase().includes(cdbSearchQuery.toLowerCase())
+                              ).map(c => (
+                                <button
+                                  key={c.cdbId}
+                                  onClick={() => {
+                                    update('cdbId', c.cdbId)
+                                    setCdbSearchQuery('')
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-secondary active:bg-secondary/80"
+                                >
+                                  {c.name}（{c.cdbId}）
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </FormField>
+
               {/* 商机阶段 */}
               <FormField label="商机阶段" required>
                 <DropdownSelect
@@ -193,7 +316,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                   options={productDomainOptions}
                   isOpen={openDropdown === 'productDomain'}
                   onToggle={() => toggleDropdown('productDomain')}
-                  onSelect={(val) => { update('productDomain', val); setOpenDropdown(null) }}
+                  onSelect={handleProductDomainChange}
                 />
               </FormField>
 
@@ -268,6 +391,19 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                       </button>
                     )}
                   </div>
+
+                  {/* 方案/立项产品组 - 仅产品域=简单方案时显示 */}
+                  {formData.productDomain === '简单方案' && (
+                    <FormField label="方案/立项产品组" required>
+                      <ObjectDropdownSelect
+                        value={detail.solutionGroupId || ''}
+                        items={Object.entries(solutionProductGroups).map(([id, { name }]) => ({ id, name }))}
+                        isOpen={openDropdown === `solutionGroup_${index}`}
+                        onToggle={() => toggleDropdown(`solutionGroup_${index}`)}
+                        onSelect={(id) => { handleSolutionGroupChange(index, id); setOpenDropdown(null) }}
+                      />
+                    </FormField>
+                  )}
 
                   {/* 物料产品组 */}
                   <FormField label="物料产品组" required>

@@ -1,6 +1,6 @@
 import { type BidInfo, industryColors } from '@/data/mock-data'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Clock, Link2 } from 'lucide-react'
+import { MapPin, Clock } from 'lucide-react'
 
 interface BidCardProps {
   bid: BidInfo
@@ -47,12 +47,7 @@ export function BidCard({ bid, onClick }: BidCardProps) {
         <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xs font-medium ${industryClass}`}>
           {bid.industry}
         </span>
-        {bid.status === 'pending' && bid.relatedOpportunityCount > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-2xs font-medium text-primary ml-auto">
-            <Link2 className="h-2.5 w-2.5" />
-            可能关联 {bid.relatedOpportunityCount} 条商机
-          </span>
-        )}
+
       </div>
 
       {/* Project Name */}
