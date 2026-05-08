@@ -4,8 +4,6 @@ import { type BidInfo, type BidStatus, mockBids } from '@/data/mock-data'
 interface AppState {
   bids: BidInfo[]
   updateBidStatus: (bidId: string, status: BidStatus, relatedOppId?: string) => void
-  markBidRead: (bidId: string) => void
-  unreadCount: number
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -27,16 +25,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ))
   }, [])
 
-  const markBidRead = useCallback((bidId: string) => {
-    setBids(prev => prev.map(b =>
-      b.id === bidId ? { ...b, isRead: true } : b
-    ))
-  }, [])
-
-  const unreadCount = bids.filter(b => b.status === 'pending').length
-
   return (
-    <AppContext.Provider value={{ bids, updateBidStatus, markBidRead, unreadCount }}>
+    <AppContext.Provider value={{ bids, updateBidStatus }}>
       {children}
     </AppContext.Provider>
   )

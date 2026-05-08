@@ -1,18 +1,16 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { FileText, BarChart3, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAppState } from '@/store/app-store'
 
 const tabs = [
-  { path: '/', icon: FileText, label: '标讯', showBadge: true },
-  { path: '/stats', icon: BarChart3, label: '统计', showBadge: false },
-  { path: '/profile', icon: User, label: '我的', showBadge: false },
+  { path: '/', icon: FileText, label: '标讯' },
+  { path: '/stats', icon: BarChart3, label: '统计' },
+  { path: '/profile', icon: User, label: '我的' },
 ]
 
 export function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { unreadCount } = useAppState()
 
   // 详情页/操作页不显示底部导航
   if (location.pathname.startsWith('/bid/')) return null
@@ -36,14 +34,7 @@ export function BottomNav() {
                   : "text-muted-foreground"
               )}
             >
-              <div className="relative">
-                <Icon className={cn("h-[22px] w-[22px]", isActive && "stroke-[2.5px]")} />
-                {tab.showBadge && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {unreadCount}
-                  </span>
-                )}
-              </div>
+              <Icon className={cn("h-[22px] w-[22px]", isActive && "stroke-[2.5px]")} />
               <span className={cn("text-2xs", isActive ? "font-semibold" : "font-medium")}>
                 {tab.label}
               </span>

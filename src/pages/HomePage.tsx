@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAppState } from '@/store/app-store'
 import { ChatTab } from '@/components/chat/ChatTab'
 import { BidListTab } from '@/components/bid/BidListTab'
 import { MessageCircle, FileText } from 'lucide-react'
@@ -9,7 +8,6 @@ type TabKey = 'chat' | 'bids'
 
 export function HomePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('chat')
-  const { unreadCount } = useAppState()
 
   const tabs: { key: TabKey; label: string; icon: typeof MessageCircle }[] = [
     { key: 'chat', label: '助手', icon: MessageCircle },
@@ -40,11 +38,6 @@ export function HomePage() {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
-                  {tab.key === 'bids' && unreadCount > 0 && (
-                    <span className="absolute -top-0.5 right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                      {unreadCount}
-                    </span>
-                  )}
                 </button>
               )
             })}
@@ -56,7 +49,7 @@ export function HomePage() {
             <p className="text-xs text-muted-foreground">智能引导处理标讯 · 在线</p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} 条新标讯待跟进` : '暂无新标讯'}
+              标讯列表
             </p>
           )}
         </div>

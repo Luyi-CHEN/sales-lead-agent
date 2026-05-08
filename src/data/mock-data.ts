@@ -21,7 +21,6 @@ export interface BidInfo {
   contactPerson: string     // 采购人联系人
   sourceUrl: string         // 原始文章链接
   status: BidStatus
-  isRead: boolean
   relatedOpportunityCount: number  // 可能关联的商机数量
   relatedOpportunityId?: string
   cdbId?: string  // 客户主数据库唯一编号
@@ -63,7 +62,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://www.ccgp-jiangsu.gov.cn/jiangsu/js_cggg/details.html?gglb=cgyx&ggid=ca103ae959dd4cf8973eee473a4c2774',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 3,
   },
   {
@@ -87,7 +85,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 3,
   },
   {
@@ -112,7 +109,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://www.ccgp-jiangsu.gov.cn/jiangsu/js_cggg/details.html?gglb=cgyx&ggid=b21312ff319c47999f540928bdec009e',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 3,
   },
   {
@@ -136,7 +132,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=b1e4f1db-e43e-4bbd-a2ed-6b91e779e32f',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -161,7 +156,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=487b56a9-2efc-43c4-9dca-8b6d6ffee1c0',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 3,
   },
   {
@@ -185,7 +179,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'https://njgc.jfh.com/purchase/detail?id=23976&type=14',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -210,7 +203,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=c0502d4b-1379-4df4-9db5-4b34c85e0dd4&planId',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -234,7 +226,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '朱助理',
     sourceUrl: 'https://www.plap.mil.cn/freecms/site/juncai/ggxx/info/2025/8a1d039896b962b10196d17ce4140b78.html',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -259,7 +250,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4c47cadc-7252-4c89-a21b-e89f36293f05',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -283,7 +273,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '周老师',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=7ab592ae-52cd-414a-bf3b-73adab0023a5',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -308,7 +297,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=5532b8cc-f9ef-441a-8008-41505fd2879d',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -332,7 +320,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -357,7 +344,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -381,7 +367,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -406,7 +391,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -430,7 +414,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=20c5b224-5471-474e-89c7-e7d50be12306',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -455,7 +438,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
   {
@@ -479,7 +461,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -504,7 +485,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=04912ca4-4c3d-44cc-aa08-d9415659fa40&planId',
     status: 'pending',
-    isRead: true,
     relatedOpportunityCount: 0,
   },
   {
@@ -528,7 +508,6 @@ export const mockBids: BidInfo[] = [
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=a1b2c3d4-5678-90ab-cdef-1234567890ab',
     status: 'pending',
-    isRead: false,
     relatedOpportunityCount: 0,
   },
 ]

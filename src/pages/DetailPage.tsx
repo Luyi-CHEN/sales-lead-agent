@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ const statusConfig = {
 export function DetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { bids, markBidRead, updateBidStatus } = useAppState()
+  const { bids, updateBidStatus } = useAppState()
   const { showToast } = useToast()
 
   const bid = bids.find(b => b.id === id)
@@ -51,12 +51,6 @@ export function DetailPage() {
   const [showLinkSheet, setShowLinkSheet] = useState(false)
   const [showNoOppSheet, setShowNoOppSheet] = useState(false)
   const [showCreateSheet, setShowCreateSheet] = useState(false)
-
-  useEffect(() => {
-    if (bid && !bid.isRead) {
-      markBidRead(bid.id)
-    }
-  }, [bid, markBidRead])
 
   if (!bid) {
     return (

@@ -20,7 +20,7 @@ interface Message {
 
 export function ChatTab() {
   const navigate = useNavigate()
-  const { bids, unreadCount } = useAppState()
+  const { bids } = useAppState()
   const { logChat, logClick } = useAnalytics()
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -183,7 +183,7 @@ export function ChatTab() {
     addMessage({ role: 'user', content: text, type: 'text' })
 
     const t = text.toLowerCase()
-    const intent = detectIntent(t, bids, unreadCount)
+    const intent = detectIntent(t, bids)
     simulateAgentReply(intent.content, intent.delay ?? 600, intent.extras)
 
     // Log conversation for analytics
@@ -356,10 +356,6 @@ function ChatBidList({ allBids, initialFilter, filteredBidIds, onBidClick }: {
                 data-track-detail={bid.projectName}
                 className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left active:bg-accent transition-colors duration-150 relative"
               >
-                {/* Unread dot */}
-                {!bid.isRead && (
-                  <span className="absolute top-3 left-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                )}
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -476,10 +472,6 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
                 className="card-press w-full rounded-xl border bg-card text-left relative"
                 style={{ boxShadow: 'var(--shadow-card)' }}
               >
-                {/* Unread dot */}
-                {!bid.isRead && (
-                  <span className="absolute top-3 left-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                )}
                 <div className="flex items-start gap-2.5 px-3 py-2.5">
                   <div className="flex-1 min-w-0">
                     {/* Row 1: status + industry + related opp */}
@@ -608,7 +600,7 @@ function matchAny(text: string, keywords: string[]): boolean {
   return keywords.some(k => text.includes(k))
 }
 
-function detectIntent(text: string, bids: BidInfo[], unreadCount: number): IntentResult {
+function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   const pendingBids = bids.filter(b => b.status === 'pending')
 
   // --- 1. 问候 ---
@@ -773,7 +765,7 @@ function detectIntent(text: string, bids: BidInfo[], unreadCount: number): Inten
   if (matchAny(text, ['标讯', '新的', '待处理', '待办', '未处理', '没处理', '处理'])) {
     return {
       intentName: 'view_pending',
-      content: `当前有 **${unreadCount} 条**标讯待跟进，需要我帮你逐条处理吗？`,
+      content: `当前有 **${pendingBids.length} 条**标讯待跟进，需要我帮你逐条处理吗？`,
       delay: 700,
       extras: {
         type: 'quick-actions',

@@ -30,11 +30,6 @@ export function BidCard({ bid, onClick }: BidCardProps) {
       className="card-press relative cursor-pointer rounded-xl border bg-card p-4"
       style={{ boxShadow: 'var(--shadow-card)', position: 'relative', zIndex: 1 }}
     >
-      {/* Unread indicator */}
-      {!bid.isRead && (
-        <span className="absolute top-4 right-4 dot-pulse" />
-      )}
-
       {/* Header: status + BU + bidType + industry + related opportunity tag */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         <Badge variant={status.variant}>{status.label}</Badge>
