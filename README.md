@@ -254,7 +254,7 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 - 实时招标详情页 → 顶部 Banner + 中部「关联的意向招标」独立入口卡跳转
 - 意向招标详情页 → `LinkedRealtimeBidsPanel` 反向展示所有被关联的实时招标列表，点击可返回
 
-**状态联动**：选择关联后，实时招标的 status 和 relatedOpportunityId 一次性跟随被关联意向招标同步；选择不关联则进入常规反馈流程（无商机/关联商机/新建商机）。
+**状态联动**：选择关联后，实时招标的 status 与 relatedOpportunityId 通过派生层（`AppProvider` 的 `effectiveBids`）**实时跟随**被关联意向招标；后续意向招标状态变化（反馈无商机 / 新建商机）会自动同步到所有关联它的实时招标。选择不关联则进入常规反馈流程（无商机/关联商机/新建商机）。
 
 ### 5. 历史案例推荐 ✨新增
 
