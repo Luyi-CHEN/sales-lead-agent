@@ -7,7 +7,8 @@ import { useAnalytics } from '@/store/analytics-store'
  */
 function getPageName(pathname: string): string {
   if (pathname === '/' || pathname === '') return '首页'
-  if (pathname.startsWith('/bid/') && pathname.endsWith('/one-pager')) return '标讯一纸通'
+  if (pathname.startsWith('/bid/') && pathname.endsWith('/one-pager')) return '标讯深度思考'
+  if (pathname.startsWith('/bid/') && pathname.endsWith('/cases')) return '历史案例推荐'
   if (pathname.startsWith('/bid/')) return '标讯详情'
   if (pathname.startsWith('/analytics')) return '分析看板'
   return pathname.replace(/^\//, '')
@@ -32,7 +33,7 @@ function findTrackableAncestor(el: HTMLElement): HTMLElement | null {
  *
  * Supported attributes on tracked elements:
  * - data-track="中文操作描述"       (required) Human-readable action description
- * - data-track-type="业务类别"      (optional) Category: 导航, 标讯浏览, 商机处理, 筛选, 对话交互, 标讯操作
+ * - data-track-type="业务类别"      (optional) Category: 导航, 标讯浏览, 商机处理, 筛选, 对话交互, 标讯操作, 标讯关联, 快捷入口, 多模态输入, 应用入口, 搜索
  * - data-track-detail="额外上下文"  (optional) Extra context like bid name
  *
  * Also logs page navigation events automatically.

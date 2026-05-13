@@ -7,6 +7,8 @@ import { HomePage } from '@/pages/HomePage'
 import { DetailPage } from '@/pages/DetailPage'
 import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { BidOnePagerPage } from '@/pages/BidOnePagerPage'
+import { BidListPage } from '@/pages/BidListPage'
+import { HistoricalCasesPage } from '@/pages/HistoricalCasesPage'
 
 function App() {
   return (
@@ -26,8 +28,10 @@ function App() {
                   <div className="mx-auto h-[100dvh] max-w-[480px] overflow-hidden bg-background">
                     <Routes>
                       <Route path="/" element={<HomePage />} />
+                      <Route path="/bids" element={<BidListPage />} />
                       <Route path="/bid/:id" element={<DetailPage />} />
                       <Route path="/bid/:id/one-pager" element={<BidOnePagerPage />} />
+                      <Route path="/bid/:id/cases" element={<HistoricalCasesPage />} />
                     </Routes>
                   </div>
                 }

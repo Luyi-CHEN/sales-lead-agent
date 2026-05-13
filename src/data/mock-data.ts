@@ -3,7 +3,7 @@ export type BidStatus = 'pending' | 'linked' | 'no_opportunity' | 'new_opportuni
 export interface BidInfo {
   id: string
   bu: string                // 事业部（BU）
-  bidType: string           // 标讯类型
+  bidType: string           // 标讯类型：意向招标 | 实时招标
   region: string            // 战区
   province: string          // 省份
   city: string              // 城市
@@ -12,6 +12,8 @@ export interface BidInfo {
   procurementUnit: string   // 采购单位
   projectName: string       // 项目名称
   procurementSummary: string // 采购需求概况
+  summary: string           // 标讯摘要（一句话概述）
+  highValueCustomer: boolean // 是否高价值客户
   totalQuantity: string     // 数量总计
   keywords: string          // 关键词
   budgetAmount: string      // 预算金额（万元）
@@ -24,6 +26,9 @@ export interface BidInfo {
   relatedOpportunityCount: number  // 可能关联的商机数量
   relatedOpportunityId?: string
   cdbId?: string  // 客户主数据库唯一编号
+  // 实时招标与历史意向招标的关联字段（仅实时招标使用）
+  linkedIntentBidIds?: string[]      // 系统匹配的候选意向招标 id 列表
+  linkedIntentBidId?: string | null  // 用户决策：undefined=未决策、null=明确不关联、string=已关联
 }
 
 export interface Opportunity {
@@ -39,7 +44,12 @@ export interface Opportunity {
 }
 
 // 基于真实 Excel 数据的模拟标讯（共 20 条）
-export const mockBids: BidInfo[] = [
+// 新增字段说明：
+//   • bidType：意向招标 | 实时招标 按偶/奇 index 分配（10:10）
+//   • highValueCustomer：按 floor(idx/2)%2 分配（50% 是←→与 bidType 解耦）50% 否）
+//   • summary：基于 procurementSummary 删除「采购：」前缀后截取 40 字作为一句话概述
+// 三字段统一在 computed mockBids 中 enrich 处理，避免修改每一条原始数据
+const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
   {
     id: 'BX-2026-001',
     cdbId: '30654576X',
@@ -512,6 +522,56 @@ export const mockBids: BidInfo[] = [
   },
 ]
 
+// ==========================================
+// 字段 enrich：为每条补全 bidType、summary、highValueCustomer
+// ==========================================
+function buildSummary(src: string): string {
+  // 1. 去掉「采购：」前缀
+  const stripped = (src || '').replace(/^采购[：:]\s*/, '').trim()
+  if (!stripped) return ''
+  // 2. 在首个句号「。」/ 分号「；」/「;」处截断（含分隔符），保留语义完整的首分句
+  const match = stripped.match(/[。；;]/)
+  if (!match || match.index === undefined) return stripped  // 无分隔符则保留全文作为兑底
+  return stripped.slice(0, match.index + 1)
+}
+
+export const mockBids: BidInfo[] = (() => {
+  // 第一轮：生成基础字段（含 bidType）
+  const firstPass: BidInfo[] = _RAW_BIDS.map((raw, idx) => ({
+    ...raw,
+    bidType: idx % 2 === 0 ? '意向招标' : '实时招标',
+    highValueCustomer: Math.floor(idx / 2) % 2 === 0,
+    summary: buildSummary(raw.procurementSummary),
+  }))
+  // 第二轮：对「实时招标」动态匹配候选意向招标
+  const intentBids = firstPass.filter(b => b.bidType === '意向招标')
+  return firstPass.map(b => {
+    if (b.bidType !== '实时招标') return b
+    // 匹配策略：先 cdbId 同 → 采购单位同 → 行业同 → 战区同
+    const cdbMatch = b.cdbId ? intentBids.filter(x => x.cdbId === b.cdbId) : []
+    const unitMatch = intentBids.filter(x => x.procurementUnit === b.procurementUnit)
+    const industryMatch = intentBids.filter(x => x.industry === b.industry)
+    const regionMatch = intentBids.filter(x => x.region === b.region)
+    // 按优先级去重拼接，取前 3 条
+    const seen = new Set<string>()
+    const candidates: string[] = []
+    for (const list of [cdbMatch, unitMatch, industryMatch, regionMatch]) {
+      for (const x of list) {
+        if (x.id === b.id || seen.has(x.id)) continue
+        seen.add(x.id)
+        candidates.push(x.id)
+        if (candidates.length >= 3) break
+      }
+      if (candidates.length >= 3) break
+    }
+    // 兑底：取前 1 条意向招标
+    if (candidates.length === 0 && intentBids.length > 0) {
+      candidates.push(intentBids[0].id)
+    }
+    return { ...b, linkedIntentBidIds: candidates }
+  })
+})()
+
 // 模拟商机数据（用于关联匹配）
 export const mockOpportunities: Opportunity[] = [
   {
@@ -606,82 +666,140 @@ export const materialProductGroups: Record<string, { name: string; productLine: 
   '4': { name: '企业级存储-SAN(18)', productLine: 'SAN-NAS' },
 }
 
-// 标讯一纸通数据结构
+// 标讯深度思考（一纸通）数据结构
+// 模块参考：基础信息 / 客户标签 / 财报分析 / 企业情报 / 历史交易 / 客户新闻 / 行业情报
 export interface BidOnePagerData {
   customerInfo: {
     customerName: string
-    uid: string
-    region: string
-    industryManager: string
-    subIndustry: string
+    uid: string              // 客户编号
+    industryColumn: string   // 行业纵队
+    region: string           // 战区
   }
-  itStrategy: string
-  itSpending: {
-    total: number
-    external: number
-    internal: number
-    lenovoShare: {
-      total: number
-      desktop: number
-      enterprise: number
-      software: number
-    }
-  }
-  productParticipation: {
-    desktop: number
-    enterprise: number
-    software: number
-  }
-  sowProducts: Array<{ name: string; percentage: number; color: string }>
+  customerTags: string[]              // 客户标签
+  financialAnalysis: string           // 财报分析
+  enterpriseIntelligence: string      // 企业情报
   historicalCooperation: {
     data: Array<{ year: string; REL: number; ISG: number; SSG: number }>
   }
-  businessAnalysis: string
-  recentNews: string
-  caseStudy: string
+  customerNews: string                // 客户新闻
+  industryIntelligence: string        // 行业情报
 }
 
 export const mockBidOnePager: BidOnePagerData = {
   customerInfo: {
     customerName: '深圳荣耀智能机器有限公司',
-    uid: 'UID000339406',
-    region: '深琼战区 / 制造',
-    industryManager: '张浩 (ZHANGHAO39)',
-    subIndustry: '离散轻工',
+    uid: 'L15009265x',
+    industryColumn: '制造',
+    region: '广西战区',
   },
-  itStrategy: '荣耀终端的IT信息化战略方向核心是构建以人工智能为核心的开放生态，实现从智能终端制造商向全球领先的AI终端生态运营者的转型。其战略体系可概括为"三步走"远景和"1x3×N"实施框架，具体体现在以下层面：荣耀的IT信息化战略以AI智能体为引擎，通过开放平台聚合生态伙伴，致力于构建跨设备、跨场景的泛化智能服务体系，其核心是从底层技术到商业生态的全维度价值重构。',
-  itSpending: {
-    total: 80,
-    external: 70,
-    internal: 10,
-    lenovoShare: {
-      total: 70,
-      desktop: 40,
-      enterprise: 5,
-      software: 5,
-    },
-  },
-  productParticipation: {
-    desktop: 40,
-    enterprise: 5,
-    software: 5,
-  },
-  sowProducts: [
-    { name: 'PC', percentage: 20, color: '#8B5CF6' },
-    { name: '存储', percentage: 60, color: '#EC4899' },
-    { name: '服务器', percentage: 1, color: '#F97316' },
-  ],
+  customerTags: ['制造行业', '广西战区', '高价值客户', '战略重点客户', 'AI转型期', '全球化扩张'],
+  financialAnalysis: '荣耀终端近三年营收保持稳健增长态势，FY2025实现营收约580亿元，同比增长12%。\n主营业务方面，智能手机仍占营收主体（约65%），但IoT与智慧生活产品增速显著（同比+28%）。创新业务层面，荣耀加速布局AI大模型端侧部署，MagicOS 9.0全面接入端云协同AI能力，同时积极拓展企业级解决方案市场，面向教育、医疗等垂直行业推出定制化终端产品组合。',
+  enterpriseIntelligence: '荣耀近期发布新一代MagicBook商用笔记本系列，主打AI本地化能力和企业安全管理特性，计划在教育和政企市场大规模推广，预计Q3采购需求集中释放。\n荣耀研发中心正在扩建内部AI训练集群，对高性能GPU服务器和存储设备有明确采购计划，预算规模约2000万元，预计下半年启动招标。\n荣耀全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，存在大型基础设施一体化解决方案合作机会。',
   historicalCooperation: {
     data: [
       { year: 'FY2023', REL: 10000, ISG: 2000, SSG: 1500 },
-      { year: 'FY2024', REL: 12000, ISG: 4500, SSG: 2000 },
-      { year: 'FY2025', REL: 12500, ISG: 6000, SSG: 4000 },
+      { year: 'FY2024', REL: 11000, ISG: 2000, SSG: 1500 },
+      { year: 'FY2025', REL: 12000, ISG: 2000, SSG: 1500 },
     ],
   },
-  businessAnalysis: '荣耀终端近三年营收保持稳健增长态势，FY2025实现营收约580亿元，同比增长12%。主营业务方面，智能手机仍占营收主体（约65%），但IoT与智慧生活产品增速显著（同比+28%）。创新业务层面，荣耀加速布局AI大模型端侧部署，MagicOS 9.0全面接入端云协同AI能力，同时积极拓展企业级解决方案市场，面向教育、医疗等垂直行业推出定制化终端产品组合。',
-  recentNews: '【PC硬件】荣耀近期发布新一代MagicBook商用笔记本系列，主打AI本地化能力和企业安全管理特性，计划在教育和政企市场大规模推广，预计Q3采购需求集中释放。\n\n【服务器/基础设施】荣耀研发中心正在扩建内部AI训练集群，对高性能GPU服务器和存储设备有明确采购计划，预算规模约2000万元，预计下半年启动招标。\n\n【方案服务】荣耀全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，存在大型基础设施一体化解决方案合作机会。',
-  caseStudy: '推荐参考某大型国有银行基础设施一体化建设项目，这是北京战区金融行业的标杆案例。\n\n该项目针对客户智能化转型的底层算力痛点，由chenly15（AR）chenly16（SS）与chenly17（SE）通力合作，最终成功拿下了500万美元的大额订单，并于FY25Q3完成签约下单。',
+  customerNews: '【PC硬件】荣耀近期发布新一代MagicBook商用笔记本系列，主打AI本地化能力和企业安全管理特性，计划在教育和政企市场大规模推广，预计Q3采购需求集中释放。\n\n【服务器/基础设施】荣耀研发中心正在扩建内部AI训练集群，对高性能GPU服务器和存储设备有明确采购计划，预算规模约2000万元，预计下半年启动招标。\n\n【方案服务】荣耀全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，存在大型基础设施一体化解决方案合作机会。',
+  industryIntelligence: '制造行业全球化扩张加速，海外研发中心（欧洲、东南亚）正在进行IT基础设施建设规划，涉及私有云部署、数据中心建设等，\n存在大型基础设施一体化解决方案合作机会。',
 }
+
+// 历史案例推荐数据结构
+export interface HistoricalCase {
+  id: string
+  industry: string         // 行业
+  subIndustry: string      // 子行业
+  region: string           // 战区
+  customerName: string     // 客户名称
+  projectName: string      // 项目名称
+  orderTime: string        // 下单时间
+  product: string          // 产品
+  businessScenario: string // 业务场景
+  totalAmount: number      // 总金额（$M，百万美元）
+  ar: string               // Account Rep
+  ss: string               // Solution Specialist
+  se: string               // Solution Engineer
+}
+
+export const mockHistoricalCases: HistoricalCase[] = [
+  {
+    id: 'case-001',
+    industry: '金融',
+    subIndustry: '国有银行',
+    region: '北京',
+    customerName: '某大型国有银行',
+    projectName: '基础设施一体化建设项目',
+    orderTime: 'FY25Q3',
+    product: '服务器',
+    businessScenario: '智能化转型',
+    totalAmount: 5,
+    ar: 'chenly15',
+    ss: 'chenly16',
+    se: 'chenly17',
+  },
+  {
+    id: 'case-002',
+    industry: '制造',
+    subIndustry: '离散轻工',
+    region: '广西',
+    customerName: '某领先手机制造企业',
+    projectName: 'AI训练集群建设项目',
+    orderTime: 'FY25Q2',
+    product: 'GPU服务器',
+    businessScenario: 'AI大模型训练',
+    totalAmount: 3.2,
+    ar: 'wangjun08',
+    ss: 'liuwei12',
+    se: 'zhaomin25',
+  },
+  {
+    id: 'case-003',
+    industry: '教育',
+    subIndustry: '高等教育',
+    region: '上海',
+    customerName: '某顶尖985高校',
+    projectName: '智慧校园云平台升级项目',
+    orderTime: 'FY25Q1',
+    product: '超融合一体机',
+    businessScenario: '教育信息化',
+    totalAmount: 1.8,
+    ar: 'sunfang19',
+    ss: 'huangli33',
+    se: 'chenkai41',
+  },
+  {
+    id: 'case-004',
+    industry: '医疗',
+    subIndustry: '三甲医院',
+    region: '成都',
+    customerName: '某省会三甲综合医院',
+    projectName: '医疗影像PACS系统扩容项目',
+    orderTime: 'FY24Q4',
+    product: '存储阵列',
+    businessScenario: '影像数据集中管理',
+    totalAmount: 2.4,
+    ar: 'lichao27',
+    ss: 'zhouyu48',
+    se: 'tangping52',
+  },
+  {
+    id: 'case-005',
+    industry: '政府',
+    subIndustry: '智慧城市',
+    region: '杭州',
+    customerName: '某东部省会政务云建设中心',
+    projectName: '政务云二期扩建项目',
+    orderTime: 'FY24Q3',
+    product: '云服务器集群',
+    businessScenario: '政务服务一体化',
+    totalAmount: 4.6,
+    ar: 'maoxiang31',
+    ss: 'penglin44',
+    se: 'gaoyuan58',
+  },
+]
 
 export const mockCustomerDatabase = [
   { cdbId: '30654576X', name: '南京医科大学（本部）' },

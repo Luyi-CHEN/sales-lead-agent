@@ -943,14 +943,18 @@ function ChatAnalyticsPanel({ logs, intentStats, chatSearch, setChatSearch, chat
 // ===== Click Analytics Panel =====
 
 const categoryColorMap: Record<string, string> = {
-  '导航': '#8b5cf6', '标讯浏览': '#2563eb', '商机处理': '#10b981',
+  '导航': '#8b5cf6', '标讯浏览': '#3b82f6', '商机处理': '#10b981',
   '筛选': '#06b6d4', '对话交互': '#f59e0b', '标讯操作': '#ec4899',
+  '标讯关联': '#0ea5e9',
+  '快捷入口': '#f43f5e', '多模态输入': '#14b8a6', '应用入口': '#a855f7',
   '搜索': '#6366f1', '其他': '#94a3b8',
 }
 
 const categoryIconMap: Record<string, string> = {
   '导航': '🧭', '标讯浏览': '📋', '商机处理': '💼',
   '筛选': '🔍', '对话交互': '💬', '标讯操作': '⚡',
+  '标讯关联': '🔗',
+  '快捷入口': '🚀', '多模态输入': '🎙️', '应用入口': '🧩',
   '搜索': '🔎', '其他': '📌',
 }
 

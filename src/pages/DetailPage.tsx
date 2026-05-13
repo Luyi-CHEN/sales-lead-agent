@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAppState } from '@/store/app-store'
 import { industryColors } from '@/data/mock-data'
+import { IntentMatchBanner, IntentMatchSheet } from '@/components/bid/IntentMatchPanel'
+import { LinkedRealtimeBidsPanel } from '@/components/bid/LinkedRealtimeBidsPanel'
 import {
   MapPin, Clock, Building2, Phone, User, Tag,
-  Link2, XCircle, PlusCircle, ExternalLink, Share2,
-  Banknote, Calendar, Layers, Globe, FileText, ChevronRight, Hash
+  Link2, XCircle, PlusCircle, ExternalLink,
+  Banknote, Calendar, Layers, Globe, FileText, ChevronRight, Hash, Star, Sparkles, BookOpen
 } from 'lucide-react'
 // Phone number masking — prototype demo only, prevent testers from calling real contacts
 function maskPhone(phone: string): string {
@@ -43,7 +45,7 @@ const statusConfig = {
 export function DetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { bids, updateBidStatus } = useAppState()
+  const { bids, updateBidStatus, linkIntentBid, markNoLink } = useAppState()
   const { showToast } = useToast()
 
   const bid = bids.find(b => b.id === id)
@@ -51,6 +53,7 @@ export function DetailPage() {
   const [showLinkSheet, setShowLinkSheet] = useState(false)
   const [showNoOppSheet, setShowNoOppSheet] = useState(false)
   const [showCreateSheet, setShowCreateSheet] = useState(false)
+  const [showIntentSheet, setShowIntentSheet] = useState(false)
 
   if (!bid) {
     return (
@@ -64,6 +67,23 @@ export function DetailPage() {
   const status = statusConfig[bid.status]
   const isProcessed = bid.status !== 'pending'
   const industryClass = industryColors[bid.industry] || 'bg-secondary text-muted-foreground'
+
+  // 实时招标 ↔ 意向招标 关联计算
+  const isRealtime = bid.bidType === '实时招标'
+  const isIntent = bid.bidType === '意向招标'
+  const candidateBids = isRealtime
+    ? (bid.linkedIntentBidIds || []).map(id => bids.find(b => b.id === id)).filter(Boolean) as typeof bids
+    : []
+  const linkedIntent = isRealtime && bid.linkedIntentBidId
+    ? bids.find(b => b.id === bid.linkedIntentBidId)
+    : undefined
+  // 反向查找：意向招标被哪些实时招标关联
+  const reverseLinkedRealtimes = isIntent
+    ? bids.filter(b => b.linkedIntentBidId === bid.id)
+    : []
+  // 是否需要隐藏反馈底部区：实时招标未决策 或 已关联意向招标
+  const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null
+  const showFeedbackBar = !isProcessed && !shouldHideFeedback
 
   const handleLink = (oppId: string) => {
     updateBidStatus(bid.id, 'linked', oppId)
@@ -87,19 +107,19 @@ export function DetailPage() {
     <div className="flex h-full flex-col bg-background">
       <PageHeader
         title="标讯详情"
-        right={
-          <button
-            data-track="分享标讯"
-            data-track-type="标讯操作"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground active:bg-secondary"
-          >
-            <Share2 className="h-[18px] w-[18px]" />
-          </button>
-        }
       />
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-28">
+        {/* 实时招标·顶部关联提醒条（1 行紧凑，点击弹出抽屉） */}
+        {isRealtime && (
+          <IntentMatchBanner
+            realtimeBid={bid}
+            candidatesCount={candidateBids.length}
+            linkedIntent={linkedIntent}
+            onOpenSheet={() => setShowIntentSheet(true)}
+          />
+        )}
         {/* Hero section */}
         <div className="border-b bg-card px-4 py-4">
           <div className="flex items-center gap-1.5 mb-2 flex-wrap">
@@ -113,6 +133,12 @@ export function DetailPage() {
             <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xs font-medium ${industryClass}`}>
               {bid.industry}
             </span>
+            {bid.highValueCustomer && (
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-[hsl(38_95%_94%)] px-1.5 py-0.5 text-2xs font-medium text-[hsl(28_85%_45%)]">
+                <Star className="h-2.5 w-2.5 fill-current" />
+                高价值客户
+              </span>
+            )}
             {bid.keywords && (
               <span className="inline-flex items-center gap-0.5 rounded-md bg-secondary px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
                 <Tag className="h-2.5 w-2.5" />
@@ -124,6 +150,12 @@ export function DetailPage() {
           <h1 className="text-lg font-bold text-foreground leading-snug mb-2">
             {bid.projectName}
           </h1>
+          {bid.summary && (
+            <p className="flex items-start gap-1.5 text-sm text-foreground/80 leading-relaxed mb-2 rounded-lg bg-primary/5 px-2.5 py-1.5">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+              <span>{bid.summary}</span>
+            </p>
+          )}
           <p className="text-sm text-muted-foreground flex items-center gap-1.5">
             <Building2 className="h-3.5 w-3.5 shrink-0" />
             {bid.procurementUnit || '未公示采购单位'}
@@ -141,9 +173,10 @@ export function DetailPage() {
           <div className="grid grid-cols-2 gap-3">
             <InfoCell icon={<Banknote className="h-3.5 w-3.5" />} label="预算金额" value={`${bid.budgetAmount}万元`} highlight />
             <InfoCell icon={<Globe className="h-3.5 w-3.5" />} label="所在区域" value={`${bid.region} · ${bid.city}`} />
+            <InfoCell icon={<Layers className="h-3.5 w-3.5" />} label="标讯类型" value={bid.bidType} />
+            <InfoCell icon={<Star className="h-3.5 w-3.5" />} label="高价值客户" value={bid.highValueCustomer ? '是' : '否'} highlight={bid.highValueCustomer} />
             <InfoCell icon={<Building2 className="h-3.5 w-3.5" />} label="事业部" value={bid.bu} />
             <InfoCell icon={<Hash className="h-3.5 w-3.5" />} label="CDBID" value={bid.cdbId || '暂无'} muted={!bid.cdbId} />
-            <InfoCell icon={<Layers className="h-3.5 w-3.5" />} label="标讯类型" value={bid.bidType} />
             <InfoCell icon={<Calendar className="h-3.5 w-3.5" />} label="采购开始" value={bid.startDate} />
             <InfoCell icon={<Clock className="h-3.5 w-3.5" />} label="采购截止" value={bid.deadline} />
             <InfoCell icon={<Layers className="h-3.5 w-3.5" />} label="主行业" value={bid.industry} />
@@ -162,25 +195,84 @@ export function DetailPage() {
           </p>
         </div>
 
-        {/* 标讯一纸通入口 */}
+        {/* 意向招标·反向关联的实时招标 */}
+        {isIntent && reverseLinkedRealtimes.length > 0 && (
+          <LinkedRealtimeBidsPanel bids={reverseLinkedRealtimes} />
+        )}
+
+        {/* 实时招标·跳转已关联意向招标详情入口 */}
+        {isRealtime && linkedIntent && (
+          <div
+            className="bg-card mx-4 mt-3 rounded-xl border p-4 cursor-pointer active:bg-accent transition-colors"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+            onClick={() => navigate(`/bid/${linkedIntent.id}`)}
+            data-track="跳转关联意向招标详情"
+            data-track-type="标讯关联"
+            data-track-detail={linkedIntent.id}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">关联的意向招标</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <span className="text-xs">查看详情</span>
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+              <span className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
+                {linkedIntent.bidType}
+              </span>
+              <span className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
+                {statusConfig[linkedIntent.status].label}
+              </span>
+            </div>
+            <p className="text-sm font-medium text-foreground line-clamp-1 break-all">{linkedIntent.procurementUnit}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 break-all">{linkedIntent.projectName}</p>
+          </div>
+        )}
+
+        {/* 标讯深度思考入口 */}
         <div
           className="bg-card mx-4 mt-3 rounded-xl border p-4 cursor-pointer active:bg-accent transition-colors"
           style={{ boxShadow: 'var(--shadow-card)' }}
           onClick={() => navigate(`/bid/${bid.id}/one-pager`)}
-          data-track="查看标讯一纸通"
+          data-track="查看标讯深度思考"
           data-track-type="标讯浏览"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">标讯一纸通</span>
+              <span className="text-sm font-semibold text-foreground">标讯深度思考</span>
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <span className="text-xs">查看详情</span>
               <ChevronRight className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">客户基础信息、IT战略方向、历史合作等深度分析</p>
+          <p className="mt-2 text-xs text-muted-foreground">标讯客户的全方位洞察分析</p>
+        </div>
+
+        {/* 历史案例推荐入口 */}
+        <div
+          className="bg-card mx-4 mt-3 rounded-xl border p-4 cursor-pointer active:bg-accent transition-colors"
+          style={{ boxShadow: 'var(--shadow-card)' }}
+          onClick={() => navigate(`/bid/${bid.id}/cases`)}
+          data-track="查看历史案例推荐"
+          data-track-type="标讯浏览"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">历史案例推荐</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="text-xs">查看详情</span>
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">相似客户成交案例参考</p>
         </div>
 
         {/* Contact Section (only if contact info available) */}
@@ -251,7 +343,7 @@ export function DetailPage() {
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      {!isProcessed && (
+      {showFeedbackBar && (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-card px-4 pt-3 safe-bottom"
           style={{ boxShadow: 'var(--shadow-bottom-bar)' }}>
           <div className="mx-auto max-w-[480px] flex gap-2.5">
@@ -311,6 +403,23 @@ export function DetailPage() {
           bid={bid}
           onClose={() => setShowCreateSheet(false)}
           onSubmit={handleCreate}
+        />
+      )}
+      {showIntentSheet && isRealtime && (
+        <IntentMatchSheet
+          realtimeBid={bid}
+          candidates={candidateBids}
+          onClose={() => setShowIntentSheet(false)}
+          onLink={(intentId) => {
+            linkIntentBid(bid.id, intentId)
+            setShowIntentSheet(false)
+            showToast('已关联历史意向招标', 'success')
+          }}
+          onMarkNoLink={() => {
+            markNoLink(bid.id)
+            setShowIntentSheet(false)
+            showToast('已选择不关联，请完成商机反馈', 'success')
+          }}
         />
       )}
     </div>

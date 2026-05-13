@@ -37,6 +37,7 @@ const config: Config = {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
+          soft: "hsl(var(--muted-soft))",
         },
         accent: {
           DEFAULT: "hsl(var(--accent))",
@@ -49,6 +50,16 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // AI 主色 #2E62FF（边框 / 次要强调）
+        "ai-primary": "hsl(var(--ai-primary))",
+        // 装饰渐变 5 色板
+        decor: {
+          purple: "hsl(var(--decor-purple))",
+          blue: "hsl(var(--decor-blue))",
+          skyblue: "hsl(var(--decor-skyblue))",
+          lavender: "hsl(var(--decor-lavender))",
+          azure: "hsl(var(--decor-azure))",
         },
         success: {
           DEFAULT: "hsl(var(--success))",
@@ -77,10 +88,13 @@ const config: Config = {
         "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
         "xs": ["0.75rem", { lineHeight: "1rem" }],
         "sm": ["0.8125rem", { lineHeight: "1.25rem" }],
-        "base": ["0.9375rem", { lineHeight: "1.5rem" }],
+        // body-lg 16px / 400
+        "base": ["1rem", { lineHeight: "1.5rem" }],
         "lg": ["1.0625rem", { lineHeight: "1.625rem" }],
         "xl": ["1.25rem", { lineHeight: "1.75rem" }],
         "2xl": ["1.5rem", { lineHeight: "2rem" }],
+        // heading-lg 28px / 700（问候语主标题）
+        "3xl": ["1.75rem", { lineHeight: "2.25rem" }],
       },
       keyframes: {
         "slide-up": {

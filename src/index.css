@@ -4,29 +4,34 @@
 
 @layer base {
   :root {
-    /* === Core Palette === */
-    --background: 0 0% 97.5%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    /* === Core Palette (对齐 Figma 设计规范 2026-05-13) === */
+    /* 背景色 #FBFDFF / 卡片底色 #F9FAFB */
+    --background: 210 100% 99%;
+    --foreground: 0 0% 15%;            /* 中性色/9 #262626 正文 */
+    --card: 0 0% 100%;                  /* 中性色/白 */
+    --card-foreground: 0 0% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 15%;
 
-    /* Primary Blue — professional, trustworthy */
-    --primary: 221 83% 53%;
+    /* Primary 主色 #2563EB — 强调色/下划线 */
+    --primary: 217 91% 54%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — subtle backgrounds */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* AI 主色 #2E62FF — 边框、次要强调 */
+    --ai-primary: 226 100% 59%;
 
-    /* Muted — labels, meta info */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    /* Secondary — 卡片底色 #F9FAFB */
+    --secondary: 220 14% 98%;
+    --secondary-foreground: 0 0% 15%;
 
-    /* Accent — interactive highlights */
-    --accent: 221 83% 96%;
-    --accent-foreground: 221 83% 40%;
+    /* Muted — 说明文字 / 分割线 */
+    --muted: 220 14% 98%;
+    --muted-foreground: 0 0% 32%;       /* 中性色/7 #525252 */
+    --muted-soft: 0 0% 59%;             /* 中性色/6 #969696 */
+
+    /* Accent — 交互高亮（涺蓝装饰）*/
+    --accent: 218 100% 96%;             /* #EDF4FF */
+    --accent-foreground: 217 91% 48%;
 
     /* Status colors */
     --success: 152 69% 41%;
@@ -37,30 +42,42 @@
     --warning-foreground: 0 0% 100%;
     --warning-muted: 38 92% 95%;
 
-    --info: 221 83% 53%;
+    --info: 217 91% 54%;
     --info-foreground: 0 0% 100%;
-    --info-muted: 221 83% 96%;
+    --info-muted: 218 100% 96%;
 
-    --destructive: 0 72% 51%;
+    /* 危险色 #EC4848 */
+    --destructive: 0 81% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders & Inputs */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    /* Borders & Inputs (#E5E6EB) */
+    --border: 220 8% 91%;
+    --input: 220 8% 91%;
+    --ring: 217 91% 54%;
 
-    /* Radius */
+    /* Radius — 统一圆角 12px */
     --radius: 0.75rem;
 
-    /* === Custom Tokens === */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 63%));
-    --gradient-header: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
-    --gradient-card-hover: linear-gradient(135deg, hsl(221 83% 97%), hsl(221 83% 94%));
+    /* === 装饰渐变色 5 色板 === */
+    --decor-purple: 252 100% 97%;       /* #F4F1FF 紫色装饰 */
+    --decor-blue: 218 100% 96%;         /* #EDF4FF 蓝色装饰 */
+    --decor-skyblue: 195 100% 92%;      /* #D7F3FF 浅蓝装饰 */
+    --decor-lavender: 252 100% 94%;     /* #E6DFFF 薰衣草装饰 */
+    --decor-azure: 218 100% 95%;        /* #E6F0FF 天蓝装饰 */
 
-    --shadow-card: 0 1px 3px 0 hsl(220 13% 91% / 0.5), 0 1px 2px -1px hsl(220 13% 91% / 0.5);
-    --shadow-card-hover: 0 4px 12px -2px hsl(221 83% 53% / 0.12), 0 2px 6px -2px hsl(221 83% 53% / 0.08);
-    --shadow-elevated: 0 8px 24px -4px hsl(220 13% 20% / 0.12), 0 4px 8px -4px hsl(220 13% 20% / 0.06);
-    --shadow-bottom-bar: 0 -1px 3px 0 hsl(220 13% 20% / 0.06);
+    /* === 品牌渐变 — 重塑为蓝调 === */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 54%), hsl(226 100% 59%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 100% 99.2%) 0%, hsl(218 100% 97%) 45%, hsl(218 100% 99%) 100%);
+    --gradient-header: linear-gradient(180deg, hsl(210 100% 99.5%) 0%, hsl(218 100% 98.5%) 100%);
+    --gradient-card-hover: linear-gradient(135deg, hsl(218 100% 98%), hsl(218 100% 96%));
+    --gradient-chip: linear-gradient(135deg, hsl(226 100% 65%), hsl(217 91% 54%));
+    /* AI 胶囊按钮背景渐变白 */
+    --gradient-ai-pill: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(218 100% 99%) 100%);
+
+    --shadow-card: 0 1px 3px 0 hsl(220 13% 70% / 0.18), 0 1px 2px -1px hsl(220 13% 70% / 0.16);
+    --shadow-card-hover: 0 4px 12px -2px hsl(217 91% 54% / 0.10), 0 2px 6px -2px hsl(217 91% 54% / 0.06);
+    --shadow-elevated: 0 8px 24px -4px hsl(220 13% 30% / 0.12), 0 4px 8px -4px hsl(220 13% 30% / 0.06);
+    --shadow-bottom-bar: 0 -1px 0 0 hsl(220 8% 91%);
 
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -163,5 +180,81 @@
     background: hsl(220 13% 20% / 0.4);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* Hero gradient background */
+  .hero-bg {
+    background: var(--gradient-hero);
+  }
+
+  /* Brand gradient text — 对齐蓝调 */
+  .text-gradient-brand {
+    background: linear-gradient(135deg, hsl(217 91% 54%), hsl(226 100% 59%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* AI 胶囊按钮 — 高 44 圆角 22 边框 AI 主色 */
+  .btn-pill-ai {
+    @apply inline-flex items-center justify-center gap-1.5;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
+    background: var(--gradient-ai-pill);
+    border: 1px solid hsl(var(--ai-primary));
+    color: hsl(var(--ai-primary));
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition-fast);
+  }
+  .btn-pill-ai:active {
+    background: hsl(var(--accent));
+  }
+
+  /* 输入框 — 高 48 圆角 24 背景 #F9FAFB */
+  .input-pill {
+    height: 48px;
+    border-radius: 24px;
+    background: hsl(var(--secondary));
+    padding: 0 20px;
+    font-size: 14px;
+    color: hsl(var(--foreground));
+    border: none;
+    outline: none;
+  }
+  .input-pill::placeholder {
+    color: hsl(0 0% 64%);
+  }
+
+  /* 装饰渐变背景快捷类 */
+  .bg-decor-purple { background-color: hsl(var(--decor-purple)); }
+  .bg-decor-blue { background-color: hsl(var(--decor-blue)); }
+  .bg-decor-skyblue { background-color: hsl(var(--decor-skyblue)); }
+  .bg-decor-lavender { background-color: hsl(var(--decor-lavender)); }
+  .bg-decor-azure { background-color: hsl(var(--decor-azure)); }
+
+  /* Glow chip (lottery) */
+  .chip-lottery {
+    background: var(--gradient-chip);
+    box-shadow: 0 6px 16px -6px hsl(280 90% 50% / 0.5);
+  }
+
+  /* Robot floating animation */
+  .animate-float {
+    animation: float 3.2s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* Glass hero card */
+  .glass-card {
+    background: linear-gradient(135deg, hsl(0 0% 100% / 0.72), hsl(218 100% 98% / 0.6));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(0 0% 100% / 0.6);
   }
 }

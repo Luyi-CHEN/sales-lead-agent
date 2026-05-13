@@ -1,14 +1,14 @@
 import { mockBidOnePager } from '@/data/mock-data'
-import { FileText, Target, DollarSign, BarChart3, TrendingUp, Newspaper, BookOpen } from 'lucide-react'
+import { FileText, Tag, TrendingUp, Building2, Newspaper, Globe, BarChart3 } from 'lucide-react'
 
 export function BidOnePager() {
   const data = mockBidOnePager
 
-  const externalPct = Math.round((data.itSpending.external / data.itSpending.total) * 100)
-  const internalPct = 100 - externalPct
-
-  const chartMax = 14000
+  // 历史交易：动态计算 Y 轴最大值与每年合计
   const cooperationData = data.historicalCooperation.data
+  const maxAmount = Math.max(...cooperationData.flatMap(d => [d.REL, d.ISG, d.SSG]), 1)
+  const chartMax = Math.ceil(maxAmount / 2000) * 2000  // 向上取 2000 整数倍
+  const yTicks = Array.from({ length: 6 }, (_, i) => Math.round(chartMax - (chartMax / 5) * i))
   const totals = cooperationData.map(d => ({
     year: d.year,
     total: d.REL + d.ISG + d.SSG,
@@ -16,146 +16,90 @@ export function BidOnePager() {
 
   return (
     <div className="text-sm text-foreground">
-      {/* 1. 客户基础信息 */}
+      {/* 1. 基础信息 */}
       <section>
         <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
           <FileText className="w-4 h-4" />
           基础信息
         </h3>
         <div className="grid grid-cols-2 gap-0 rounded-lg overflow-hidden border">
-          <div className="bg-muted/40 p-3">
+          <div className="bg-muted/40 p-3 col-span-2">
+            <div className="text-xs text-muted-foreground mb-0.5">客户名称</div>
+            <div className="text-sm font-semibold">{data.customerInfo.customerName}</div>
+          </div>
+          <div className="bg-background p-3 border-t">
             <div className="text-xs text-muted-foreground mb-0.5">客户编号</div>
             <div className="text-sm font-semibold">{data.customerInfo.uid}</div>
           </div>
-          <div className="bg-background p-3">
-            <div className="text-xs text-muted-foreground mb-0.5">战区/纵队</div>
+          <div className="bg-muted/40 p-3 border-t">
+            <div className="text-xs text-muted-foreground mb-0.5">行业纵队</div>
+            <div className="text-sm font-semibold">{data.customerInfo.industryColumn}</div>
+          </div>
+          <div className="bg-background p-3 border-t col-span-2">
+            <div className="text-xs text-muted-foreground mb-0.5">战区</div>
             <div className="text-sm font-semibold">{data.customerInfo.region}</div>
           </div>
-          <div className="bg-background p-3">
-            <div className="text-xs text-muted-foreground mb-0.5">行业经理</div>
-            <div className="text-sm font-semibold">{data.customerInfo.industryManager}</div>
-          </div>
-          <div className="bg-muted/40 p-3">
-            <div className="text-xs text-muted-foreground mb-0.5">管理子行业</div>
-            <div className="text-sm font-semibold">{data.customerInfo.subIndustry}</div>
-          </div>
         </div>
       </section>
 
-      {/* 2. IT信息化战略方向 */}
+      {/* 2. 客户标签 */}
       <section className="border-t border-border/50 pt-4 mt-4">
         <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <Target className="w-4 h-4" />
-          IT信息化战略方向
+          <Tag className="w-4 h-4" />
+          客户标签
         </h3>
-        <div className="bg-blue-50 border-l-[3px] border-blue-500 rounded-r-md p-4 text-sm leading-relaxed text-foreground">
-          {data.itStrategy}
-        </div>
-      </section>
-
-      {/* 3. IT Spending 分布 */}
-      <section className="border-t border-border/50 pt-4 mt-4">
-        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <DollarSign className="w-4 h-4" />
-          IT Spending 分布 (单位: 百万美元)
-        </h3>
-        <div className="flex items-center gap-8 mb-4">
-          {/* 环形图 */}
-          <div className="relative w-28 h-28 rounded-full flex-shrink-0" style={{ background: `conic-gradient(#3B82F6 0% ${externalPct}%, #10B981 ${externalPct}% 100%)` }}>
-            <div className="absolute inset-0 m-auto w-16 h-16 bg-background rounded-full flex items-center justify-center">
-              <span className="text-sm font-bold">{data.itSpending.total} M$</span>
-            </div>
-          </div>
-          {/* 图例 */}
-          <div className="flex flex-col gap-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500" />
-              <span>对外IT Spending {data.itSpending.external}M$ ({externalPct}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span>对内IT Spending {data.itSpending.internal}M$ ({internalPct}%)</span>
-            </div>
-          </div>
-        </div>
-        {/* 联想可参与份额 */}
-        <div className="space-y-2">
-          <div className="bg-blue-50 rounded-lg p-3 text-sm font-semibold text-foreground">
-            对外IT Spending {data.itSpending.lenovoShare.total}M$
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-green-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-muted-foreground mb-0.5">桌面级硬件</div>
-              <div className="text-sm font-semibold text-green-700">{data.itSpending.lenovoShare.desktop}M$</div>
-            </div>
-            <div className="bg-blue-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-muted-foreground mb-0.5">企业级硬件</div>
-              <div className="text-sm font-semibold text-blue-700">{data.itSpending.lenovoShare.enterprise}M$</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-3 text-center">
-              <div className="text-xs text-muted-foreground mb-0.5">软件及服务</div>
-              <div className="text-sm font-semibold text-yellow-700">{data.itSpending.lenovoShare.software}M$</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. 产品可参与度 */}
-      <section className="border-t border-border/50 pt-4 mt-4">
-        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <BarChart3 className="w-4 h-4" />
-          产品可参与度 (%)
-        </h3>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-green-50 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{data.productParticipation.desktop}</div>
-            <div className="text-xs text-muted-foreground mt-1">桌面级硬件</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{data.productParticipation.enterprise}</div>
-            <div className="text-xs text-muted-foreground mt-1">企业级硬件</div>
-          </div>
-          <div className="bg-yellow-50 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-orange-500">{data.productParticipation.software}</div>
-            <div className="text-xs text-muted-foreground mt-1">软件及服务</div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. SOW 产品占比 */}
-      <section className="border-t border-border/50 pt-4 mt-4">
-        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <Target className="w-4 h-4" />
-          SOW 产品占比 (%)
-        </h3>
-        <div className="space-y-3">
-          {data.sowProducts.map((item) => (
-            <div key={item.name}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm">{item.name}</span>
-                <span className="text-sm font-semibold">{item.percentage}%</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
-                />
-              </div>
-            </div>
+        <div className="flex flex-wrap gap-2">
+          {data.customerTags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary"
+            >
+              {tag}
+            </span>
           ))}
         </div>
       </section>
 
-      {/* 6. 历史合作 */}
+      {/* 3. 财报分析 */}
       <section className="border-t border-border/50 pt-4 mt-4">
         <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
           <TrendingUp className="w-4 h-4" />
-          历史合作
+          财报分析
+        </h3>
+        <div className="space-y-2">
+          {data.financialAnalysis.split('\n').map((paragraph, idx) => (
+            <p key={idx} className="text-sm leading-relaxed text-foreground">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. 企业情报 */}
+      <section className="border-t border-border/50 pt-4 mt-4">
+        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
+          <Building2 className="w-4 h-4" />
+          企业情报
+        </h3>
+        <div className="space-y-2">
+          {data.enterpriseIntelligence.split('\n').map((paragraph, idx) => (
+            <p key={idx} className="text-sm leading-relaxed text-foreground">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. 历史交易 */}
+      <section className="border-t border-border/50 pt-4 mt-4">
+        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
+          <BarChart3 className="w-4 h-4" />
+          历史交易
         </h3>
 
         {/* 柱状图 */}
         <div className="mb-4">
-          <div className="text-xs text-muted-foreground mb-2">历史合作金额趋势</div>
+          <div className="text-xs text-muted-foreground mb-2">历史交易金额趋势</div>
           {/* 图例 */}
           <div className="flex items-center gap-4 mb-3 text-xs">
             <div className="flex items-center gap-1">
@@ -175,14 +119,9 @@ export function BidOnePager() {
           <div className="flex gap-4">
             {/* Y轴 */}
             <div className="flex flex-col justify-between text-xs text-muted-foreground text-right pr-2 py-1" style={{ height: 160 }}>
-              <span>14000</span>
-              <span>12000</span>
-              <span>10000</span>
-              <span>8000</span>
-              <span>6000</span>
-              <span>4000</span>
-              <span>2000</span>
-              <span>0</span>
+              {yTicks.map((t) => (
+                <span key={t}>{t.toLocaleString()}</span>
+              ))}
             </div>
             {/* 图表区域 */}
             <div className="flex-1 flex items-end justify-around gap-2" style={{ height: 160 }}>
@@ -219,60 +158,51 @@ export function BidOnePager() {
             <thead>
               <tr className="bg-muted/50">
                 <th className="text-left p-2.5 text-xs font-medium text-muted-foreground">BU</th>
-                <th className="text-right p-2.5 text-xs font-medium text-muted-foreground">FY2023(万元)</th>
-                <th className="text-right p-2.5 text-xs font-medium text-muted-foreground">FY2024(万元)</th>
-                <th className="text-right p-2.5 text-xs font-medium text-muted-foreground">FY2025(万元)</th>
+                {cooperationData.map((d) => (
+                  <th key={d.year} className="text-right p-2.5 text-xs font-medium text-muted-foreground">
+                    {d.year}(万元)
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               <tr className="border-t">
                 <td className="p-2.5">REL</td>
-                <td className="p-2.5 text-right">{cooperationData[0].REL.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[1].REL.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[2].REL.toLocaleString()}</td>
+                {cooperationData.map((d) => (
+                  <td key={d.year} className="p-2.5 text-right">{d.REL.toLocaleString()}</td>
+                ))}
               </tr>
               <tr className="border-t bg-muted/20">
                 <td className="p-2.5">ISG</td>
-                <td className="p-2.5 text-right">{cooperationData[0].ISG.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[1].ISG.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[2].ISG.toLocaleString()}</td>
+                {cooperationData.map((d) => (
+                  <td key={d.year} className="p-2.5 text-right">{d.ISG.toLocaleString()}</td>
+                ))}
               </tr>
               <tr className="border-t">
                 <td className="p-2.5">SSG</td>
-                <td className="p-2.5 text-right">{cooperationData[0].SSG.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[1].SSG.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{cooperationData[2].SSG.toLocaleString()}</td>
+                {cooperationData.map((d) => (
+                  <td key={d.year} className="p-2.5 text-right">{d.SSG.toLocaleString()}</td>
+                ))}
               </tr>
               <tr className="border-t font-bold bg-muted/30">
                 <td className="p-2.5">总计</td>
-                <td className="p-2.5 text-right">{totals[0].total.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{totals[1].total.toLocaleString()}</td>
-                <td className="p-2.5 text-right">{totals[2].total.toLocaleString()}</td>
+                {totals.map((t) => (
+                  <td key={t.year} className="p-2.5 text-right">{t.total.toLocaleString()}</td>
+                ))}
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* 7. 经营分析 */}
-      <section className="border-t border-border/50 pt-4 mt-4">
-        <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <TrendingUp className="w-4 h-4" />
-          经营分析
-        </h3>
-        <p className="text-sm leading-relaxed text-foreground">
-          {data.businessAnalysis}
-        </p>
-      </section>
-
-      {/* 8. 近期动态 */}
+      {/* 6. 客户新闻 */}
       <section className="border-t border-border/50 pt-4 mt-4">
         <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
           <Newspaper className="w-4 h-4" />
-          近期动态
+          客户新闻
         </h3>
         <div className="space-y-3">
-          {data.recentNews.split('\n\n').map((paragraph, idx) => (
+          {data.customerNews.split('\n\n').map((paragraph, idx) => (
             <p key={idx} className="text-sm leading-relaxed text-foreground">
               {paragraph}
             </p>
@@ -280,14 +210,14 @@ export function BidOnePager() {
         </div>
       </section>
 
-      {/* 9. 历史案例推荐 */}
+      {/* 7. 行业情报 */}
       <section className="border-t border-border/50 pt-4 mt-4">
         <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold text-foreground">
-          <BookOpen className="w-4 h-4" />
-          历史案例推荐
+          <Globe className="w-4 h-4" />
+          行业情报
         </h3>
-        <div className="rounded-xl border bg-card p-4">
-          {data.caseStudy.split('\n\n').map((paragraph, idx) => (
+        <div className="space-y-2">
+          {data.industryIntelligence.split('\n').map((paragraph, idx) => (
             <p key={idx} className="text-sm leading-relaxed text-foreground">
               {paragraph}
             </p>

@@ -115,7 +115,15 @@ src/
 │   │   ├── BidListTab.tsx              # 标讯列表 + 筛选
 │   │   ├── CreateOpportunitySheet.tsx  # 新建商机弹窗
 │   │   ├── NoOpportunitySheet.tsx      # 标记无商机弹窗
-│   │   └── BidOnePager.tsx             # 标讯一纸通展示组件
+│   │   ├── BidOnePager.tsx             # 标讯一纸通展示组件
+│   │   ├── IntentMatchPanel.tsx        # 实时招标关联意向招标（Banner + Sheet 双组件）
+│   │   └── LinkedRealtimeBidsPanel.tsx # 意向招标反向展示关联的实时招标列表
+│   │
+│   ├── case/
+│   │   └── HistoricalCaseCard.tsx      # 历史成单案例卡片
+│   │
+│   ├── apps/
+│   │   └── AppsTab.tsx                  # 应用中心 Tab（三级入口页）
 │   │
 │   ├── analytics/
 │   │   └── ClickTracker.tsx            # 用户点击行为追踪（data-track 属性）
@@ -128,6 +136,14 @@ src/
 └── lib/
     ├── utils.ts                        # 工具函数
     └── supabase.ts                     # Supabase 连接器（可选）
+
+pages/
+├── HomePage.tsx                         # 主页（助手 Tab + 标讯列表 Tab + 应用中心 Tab）
+├── BidListPage.tsx                      # 标讯管理独立页（从应用中心进入）
+├── DetailPage.tsx                       # 标讯详情页（信息展示 + 商机操作 + 关联决策）
+├── BidOnePagerPage.tsx                 # 标讯一纸通独立页面
+├── HistoricalCasesPage.tsx             # 历史案例推荐页（从详情页进入）
+└── AnalyticsPage.tsx                   # PC 端分析看板
 
 aliyun-fc/                               # 阿里云 FC 云函数代码
 ├── index.js                             # FC 3.0 事件驱动 Handler
@@ -183,6 +199,7 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 | 状态值 | 用户可见名称 | 说明 |
 |--------|-------------|------|
 | `pending` | 已分配（待跟进） | 用户看到的默认初始状态 |
+| `linked` | 已反馈（关联已有商机） | 详情页操作后自动流转 |
 | `no_opportunity` | 已反馈（无商机） | 详情页操作后自动流转 |
 | `new_opportunity` | 已反馈（新商机） | 详情页操作后自动流转，默认关联编号 `T023043423X` |
 
@@ -214,11 +231,46 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 - **历史合作**：柱状图 + 表格双视图展示历年合作金额
 - **经营分析**：文本区块展示客户经营洞察
 - **近期动态**：文本区块展示客户最新动态
-- **历史案例推荐**：展示银行基础设施一体化建设项目标杆案例，采用普通段落样式（无特殊加粗/引用框）
 
 所有图表均采用纯 CSS 实现，无需引入图表库，保持轻量化。
 
-### 4. PC 分析看板
+### 4. 实时招标 ↔ 意向招标关联决策机制 ✨新增
+
+针对【实时招标】类型的标讯，系统自动匹配可能关联的历史【意向招标】，由销售手动决策后锁定。
+
+**匹配策略**：依序按 cdbId / 采购单位 / 行业 / 战区 取并集，最多展示 3 条候选。
+
+**交互设计**：顶部提醒条 `IntentMatchBanner` + 底部抽屉 `IntentMatchSheet` 双组件模式，首屏不遮挡标讯主体信息。Banner 三态独立配色：
+
+| 状态 | Banner 表现 | 可点击 |
+|---|---|---|
+| 未决策 | 🟦 「系统匹配到 N 条相关历史意向招标，请处理」 | 是，打开 Sheet |
+| 已关联 | ✅ 「已关联：供应商名称」 | 只读展示 |
+| 明确不关联 | ⚪ 「未关联历史意向招标」 | 只读展示 |
+
+**决策不可逆规则**：一经选择关联或不关联即不可变更，避免误操作产生重复商机。
+
+**双向关联展示**：
+- 实时招标详情页 → 顶部 Banner + 中部「关联的意向招标」独立入口卡跳转
+- 意向招标详情页 → `LinkedRealtimeBidsPanel` 反向展示所有被关联的实时招标列表，点击可返回
+
+**状态联动**：选择关联后，实时招标的 status 和 relatedOpportunityId 一次性跟随被关联意向招标同步；选择不关联则进入常规反馈流程（无商机/关联商机/新建商机）。
+
+### 5. 历史案例推荐 ✨新增
+
+标讯详情页新增【历史案例推荐】入口，点击跳转独立页 `/bid/:id/cases`，以列表卡片展示与当前标讯相关的历史成单案例。字段参考 `测试数据/历史案例推荐.xlsx`：
+
+| 字段 | 说明 |
+|---|---|
+| industry / subIndustry | 行业 / 子行业 |
+| region | 战区 |
+| customerName / projectName | 客户名称 / 项目名称 |
+| orderTime | 下单时间 |
+| product / businessScenario | 产品 / 业务场景 |
+| totalAmount | 总金额（$M 百万美元） |
+| ar / ss / se | Account Rep / Solution Specialist / Solution Engineer |
+
+### 6. PC 分析看板
 
 | Tab | 模块 | 说明 |
 |-----|------|------|
@@ -232,7 +284,7 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 
 PC 看板每 5 秒自动从云端拉取最新数据，汇聚所有设备的用户行为。
 
-### 5. 用户识别系统
+### 7. 用户识别系统
 
 | 标识 | 存储方式 | 生命周期 | 说明 |
 |------|---------|---------|------|
@@ -241,7 +293,7 @@ PC 看板每 5 秒自动从云端拉取最新数据，汇聚所有设备的用�
 
 > **识别边界**：userId 基于设备 + 浏览器粒度。同一用户在手机和电脑上访问 = 2 个 userId；两位用户共用同一手机浏览器 = 1 个 userId。适用于原型测试场景，正式产品需对接账号体系。
 
-### 6. 行为埋点系统
+### 8. 行为埋点系统
 
 通过 `data-track` HTML 属性实现语义化追踪，无需修改业务逻辑：
 
@@ -255,13 +307,33 @@ PC 看板每 5 秒自动从云端拉取最新数据，汇聚所有设备的用�
 
 | 属性 | 作用 | 示例值 |
 |------|------|-------|
-| `data-track` | 操作描述（中文） | "查看标讯详情"、"筛选「教育」标讯" |
-| `data-track-type` | 操作类别 | 导航、标讯浏览、商机处理、筛选、对话交互 |
+| `data-track` | 操作描述（中文） | "查看标讯详情"、"跳转关联意向招标详情" |
+| `data-track-type` | 操作类别 | 导航、标讯浏览、商机处理、筛选、对话交互、标讯操作、**标讯关联**、**快捷入口**、**多模态输入**、**应用入口**、搜索 |
 | `data-track-detail` | 补充信息 | 项目名称、筛选值等 |
 
-**页面识别**：`ClickTracker` 支持按页面维度自动分类追踪事件，已覆盖"标讯一纸通"独立页面。标讯一纸通入口卡片已添加 `data-track="查看标讯一纸通"` 埋点。
+**类目色板一览**（AnalyticsPage 看板独立调色，与品牌主色区分）：
 
-### 7. 数据流转
+| 类目 | 色值 | 图标 |
+|---|---|---|
+| 导航 | #8b5cf6 | 🧭 |
+| 标讯浏览 | #3b82f6 | 📋 |
+| 商机处理 | #10b981 | 💼 |
+| 筛选 | #06b6d4 | 🔍 |
+| 对话交互 | #f59e0b | 💬 |
+| 标讯操作 | #ec4899 | ⚡ |
+| 标讯关联 ✨ | #0ea5e9 | 🔗 |
+| 快捷入口 ✨ | #f43f5e | 🚀 |
+| 多模态输入 ✨ | #14b8a6 | 🎙️ |
+| 应用入口 ✨ | #a855f7 | 🧩 |
+| 搜索 | #6366f1 | 🔎 |
+| 其他 | #94a3b8 | 📌 |
+
+**页面识别**：`ClickTracker` 支持按页面维度自动分类追踪事件，已覆盖"标讯一纸通"与"历史案例推荐"独立页面。
+
+**关联决策双向跳转闭环均归为 `标讯关联` 类目**，便于在看板上做专项漏斗分析：
+- `打开关联意向招标抽屉`、`关联意向招标`、`不关联意向招标`、`跳转关联意向招标详情`、`点击关联实时招标卡片`
+
+### 9. 数据流转
 
 ```
 手机端用户操作
@@ -325,8 +397,31 @@ interface BidInfo {
   contactPerson: string      // 采购人联系人
   sourceUrl: string          // 原始公告链接
   cdbId?: string             // 客户主数据库唯一编号
-  // 状态：pending=已分配(待跟进)；no_opportunity/new_opportunity=已反馈（分别对应无商机/新商机）
-  status: 'pending' | 'no_opportunity' | 'new_opportunity'
+  // 状态：pending=已分配(待跟进)；linked=已关联意向招标；no_opportunity/new_opportunity=已反馈（无商机/新商机）
+  status: 'pending' | 'linked' | 'no_opportunity' | 'new_opportunity'
+  // 关联意向招标决策（仅 bidType=实时招标 适用）
+  linkedIntentBidIds?: string[]      // 系统匹配的候选意向招标 id 列表
+  linkedIntentBidId?: string | null  // undefined=未决策、null=明确不关联、string=已关联
+}
+```
+
+### HistoricalCase（历史成单案例）
+
+```typescript
+interface HistoricalCase {
+  id: string
+  industry: string         // 行业
+  subIndustry: string      // 子行业
+  region: string           // 战区
+  customerName: string     // 客户名称
+  projectName: string      // 项目名称
+  orderTime: string        // 下单时间
+  product: string          // 产品
+  businessScenario: string // 业务场景
+  totalAmount: number      // 总金额（百万美元）
+  ar: string               // Account Rep
+  ss: string               // Solution Specialist
+  se: string               // Solution Engineer
 }
 ```
 
