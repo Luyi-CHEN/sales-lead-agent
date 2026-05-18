@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react'
+﻿import { useEffect, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAnalytics } from '@/store/analytics-store'
 
@@ -95,3 +95,4 @@ export function ClickTracker() {
 
   return null
 }
+

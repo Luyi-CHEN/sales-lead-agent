@@ -233,7 +233,7 @@ export function ChatTab() {
   }
 
   const handleDataCardClick = (key: 'visits' | 'bids') => {
-    const prompt = key === 'bids' ? '待我处理的标讯' : '测试任务'
+    const prompt = key === 'bids' ? '已分配标讯' : '测试任务'
     logClick({
       description: `点击数据卡片「${prompt}」`,
       category: '数据入口',
@@ -1447,3 +1447,4 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
     },
   }
 }
+

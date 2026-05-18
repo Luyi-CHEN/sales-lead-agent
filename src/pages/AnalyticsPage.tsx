@@ -734,12 +734,13 @@ function StatBadge({ icon, label, value }: { icon: React.ReactNode; label: strin
   )
 }
 
-function TabButton({ active, onClick, icon, label, count }: {
+function TabButton({ active, onClick, icon, label, count, ...rest }: {
   active: boolean; onClick: () => void; icon: React.ReactNode; label: string; count: number
-}) {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       onClick={onClick}
+      {...rest}
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '14px 20px',
@@ -1194,12 +1195,13 @@ function ClickAnalyticsPanel({ paths, featureRanking, categoryStats, pageStats, 
 
 // ===== Utility Components =====
 
-function ActionButton({ icon, label, onClick, danger }: {
+function ActionButton({ icon, label, onClick, danger, ...rest }: {
   icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean
-}) {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       onClick={onClick}
+      {...rest}
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
         padding: '7px 14px', borderRadius: 8,
@@ -1256,3 +1258,4 @@ const intentColorMap: Record<string, string> = {
   view_opportunities: '#059669', keyword_search: '#7c3aed',
   fallback: '#ef4444', unknown: '#94a3b8',
 }
+
