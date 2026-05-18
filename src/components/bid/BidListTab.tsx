@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { useAppState } from '@/store/app-store'
@@ -7,15 +7,14 @@ import { BidCard } from '@/components/bid/BidCard'
 export function BidListTab() {
   const { bids } = useAppState()
   const navigate = useNavigate()
-  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'feedback'>('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | 'assigned' | 'following' | 'converted' | 'abandoned'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
 
   const filteredBids = bids.filter(b => {
     const matchTab =
       activeFilter === 'all' ||
-      (activeFilter === 'pending' && b.status === 'pending') ||
-      (activeFilter === 'feedback' && ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status))
+      activeFilter === b.status
 
     const matchSearch = !searchQuery ||
       b.projectName.includes(searchQuery) ||
@@ -26,8 +25,10 @@ export function BidListTab() {
 
   const filters = [
     { key: 'all' as const, label: '全部', count: bids.length },
-    { key: 'pending' as const, label: '待跟进', count: bids.filter(b => b.status === 'pending').length },
-    { key: 'feedback' as const, label: '已反馈', count: bids.filter(b => ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)).length },
+    { key: 'assigned' as const, label: '已分配', count: bids.filter(b => b.status === 'assigned').length },
+    { key: 'following' as const, label: '跟进中', count: bids.filter(b => b.status === 'following').length },
+    { key: 'converted' as const, label: '已转化', count: bids.filter(b => b.status === 'converted').length },
+    { key: 'abandoned' as const, label: '已放弃', count: bids.filter(b => b.status === 'abandoned').length },
   ]
 
   return (

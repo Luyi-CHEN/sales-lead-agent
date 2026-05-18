@@ -1,20 +1,21 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { noOpportunityReasons } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
 import { X, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface NoOpportunitySheetProps {
   onClose: () => void
-  onSubmit: () => void
+  onSubmit: (data: { hasIsgProduct: '是' | '否' }) => void
 }
 
 export function NoOpportunitySheet({ onClose, onSubmit }: NoOpportunitySheetProps) {
   const [selectedReason, setSelectedReason] = useState<string | null>(null)
   const [otherText, setOtherText] = useState('')
   const [remark, setRemark] = useState('')
+  const [hasIsgProduct, setHasIsgProduct] = useState<'是' | '否' | null>(null)
 
   const isOther = selectedReason === '其他原因'
-  const canSubmit = selectedReason && (!isOther || otherText.trim())
+  const canSubmit = selectedReason && (!isOther || otherText.trim()) && hasIsgProduct !== null
 
   return (
     <>
@@ -33,7 +34,7 @@ export function NoOpportunitySheet({ onClose, onSubmit }: NoOpportunitySheetProp
           <div className="flex items-center justify-between px-4 pb-3">
             <div>
               <h2 className="text-base font-bold text-foreground">反馈无商机</h2>
-              <p className="text-2xs text-muted-foreground mt-0.5">请选择无商机的主要原因</p>
+              <p className="text-2xs text-muted-foreground mt-0.5">请完成以下反馈信息</p>
             </div>
             <button
               onClick={onClose}
@@ -43,8 +44,45 @@ export function NoOpportunitySheet({ onClose, onSubmit }: NoOpportunitySheetProp
             </button>
           </div>
 
-          {/* Reason List */}
+          {/* Content */}
           <div className="overflow-y-auto scrollbar-hide px-4" style={{ maxHeight: '50vh' }}>
+            {/* Has ISG Product */}
+            <div className="mb-3">
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                是否有ISG产品 <span className="text-destructive">*</span>
+              </label>
+              <div className="flex gap-2.5">
+                {(['是', '否'] as const).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setHasIsgProduct(opt)}
+                    className={`flex-1 card-press relative flex items-center justify-center gap-2 rounded-xl border p-3 text-sm transition-all duration-200 ${
+                      hasIsgProduct === opt
+                        ? 'border-primary bg-accent font-semibold text-foreground'
+                        : 'bg-card text-foreground'
+                    }`}
+                    data-track={`选择「是否有ISG产品」：${opt}`}
+                    data-track-type="商机处理"
+                  >
+                    <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                      hasIsgProduct === opt
+                        ? 'border-primary bg-primary'
+                        : 'border-muted-foreground/30'
+                    }`}>
+                      {hasIsgProduct === opt && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
+                      )}
+                    </div>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reason List */}
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+              无商机原因 <span className="text-destructive">*</span>
+            </label>
             <div className="flex flex-col gap-2 pb-3">
               {noOpportunityReasons.map(reason => (
                 <button
@@ -55,6 +93,8 @@ export function NoOpportunitySheet({ onClose, onSubmit }: NoOpportunitySheetProp
                       ? 'border-primary bg-accent'
                       : 'bg-card'
                   }`}
+                  data-track={`选择无商机原因：${reason}`}
+                  data-track-type="商机处理"
                 >
                   <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
                     selectedReason === reason
@@ -114,10 +154,12 @@ export function NoOpportunitySheet({ onClose, onSubmit }: NoOpportunitySheetProp
               size="full"
               variant={canSubmit ? "destructive" : "default"}
               disabled={!canSubmit}
-              onClick={onSubmit}
+              onClick={() => hasIsgProduct && onSubmit({ hasIsgProduct })}
               className={!canSubmit ? 'opacity-40' : ''}
+              data-track="提交「无商机」反馈"
+              data-track-type="商机处理"
             >
-              {canSubmit ? '确认提交' : '请选择原因'}
+              {canSubmit ? '确认提交' : '请完善必填项'}
             </Button>
           </div>
         </div>

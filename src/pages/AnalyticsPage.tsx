@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useAnalytics, type ChatLogEntry, type ClickPathEntry } from '@/store/analytics-store'
 import {
   MessageSquare, MousePointerClick, Download, Trash2,
@@ -12,7 +12,7 @@ type SortKey = 'time' | 'intent' | 'session'
 export function AnalyticsPage() {
   const {
     getChatLogs, getClickPaths,
-    clearChatLogs, clearClickPaths,
+    clearChatLogs, clearClickPaths, clearAll,
     exportChatLogsCSV, exportClickPathsCSV,
     fetchServerData,
   } = useAnalytics()
@@ -142,6 +142,13 @@ export function AnalyticsPage() {
     else { clearClickPaths(); setClickPaths([]) }
   }
 
+  const handleClearAll = () => {
+    if (!confirm('确认清空所有分析数据吗？包括对话记录、点击路径、用户ID和会话ID。此操作不可恢复。')) return
+    clearAll()
+    setChatLogs([])
+    setClickPaths([])
+  }
+
   const toggleSession = (sid: string) => {
     setExpandedSessions(prev => {
       const next = new Set(prev)
@@ -176,6 +183,20 @@ export function AnalyticsPage() {
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 20, fontSize: 13 }}>
+                <button
+                  onClick={handleClearAll}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 14px', borderRadius: 6,
+                    background: 'rgba(239,68,68,0.15)', color: '#fca5a5',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)' }}
+                >
+                  <Trash2 size={14} /> 清空全部
+                </button>
                 <StatBadge icon={<Users size={14} />} label="独立用户" value={uniqueUsers} />
                 <StatBadge icon={<Hash size={14} />} label="独立会话" value={sessionCount} />
                 <StatBadge icon={<MessageSquare size={14} />} label="对话记录" value={chatLogs.length} />

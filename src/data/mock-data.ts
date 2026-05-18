@@ -1,4 +1,4 @@
-export type BidStatus = 'pending' | 'linked' | 'no_opportunity' | 'new_opportunity'
+﻿export type BidStatus = 'assigned' | 'following' | 'converted' | 'abandoned'
 
 export interface BidInfo {
   id: string
@@ -29,6 +29,13 @@ export interface BidInfo {
   // 实时招标与历史意向招标的关联字段（仅实时招标使用）
   linkedIntentBidIds?: string[]      // 系统匹配的候选意向招标 id 列表
   linkedIntentBidId?: string | null  // 用户决策：undefined=未决策、null=明确不关联、string=已关联
+  // 反馈流程扩展字段
+  noOppHasIsgProduct?: '是' | '否'   // 无商机反馈：是否有ISG产品
+  followUpRemark?: string            // 跟进中备注
+  linkedCdbId?: string               // 关联已有商机时补录的CDBID
+  productLabel?: string               // 产品标签
+  bidKeywords?: string                // 标讯关键词
+  productManager?: string             // 产品经理
 }
 
 export interface Opportunity {
@@ -52,7 +59,7 @@ export interface Opportunity {
 const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
   {
     id: 'BX-2026-001',
-    cdbId: '30654576X',
+    cdbId: '',
     bu: 'ISG',
     bidType: '意向',
     region: '江苏',
@@ -71,8 +78,11 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://www.ccgp-jiangsu.gov.cn/jiangsu/js_cggg/details.html?gglb=cgyx&ggid=ca103ae959dd4cf8973eee473a4c2774',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 3,
+    productLabel: 'Intel平台通用服务器',
+    bidKeywords: '云计算、大数据',
+    productManager: 'huanghs',
   },
   {
     id: 'BX-2026-002',
@@ -94,8 +104,11 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 3,
+    productLabel: '联想/锐捷数据中心交换机',
+    bidKeywords: '数据中心交换机',
+    productManager: 'dongliang7',
   },
   {
     id: 'BX-2026-003',
@@ -118,8 +131,11 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://www.ccgp-jiangsu.gov.cn/jiangsu/js_cggg/details.html?gglb=cgyx&ggid=b21312ff319c47999f540928bdec009e',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 3,
+    productLabel: 'NVIDIA-VGPU',
+    bidKeywords: 'GPU虚拟化',
+    productManager: 'weitt',
   },
   {
     id: 'BX-2026-004',
@@ -141,7 +157,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=b1e4f1db-e43e-4bbd-a2ed-6b91e779e32f',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -165,7 +181,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=487b56a9-2efc-43c4-9dca-8b6d6ffee1c0',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 3,
   },
   {
@@ -188,7 +204,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'https://njgc.jfh.com/purchase/detail?id=23976&type=14',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -212,7 +228,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=c0502d4b-1379-4df4-9db5-4b34c85e0dd4&planId',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -235,7 +251,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '022-XXXX-XXX',
     contactPerson: '朱助理',
     sourceUrl: 'https://www.plap.mil.cn/freecms/site/juncai/ggxx/info/2025/8a1d039896b962b10196d17ce4140b78.html',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -259,7 +275,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4c47cadc-7252-4c89-a21b-e89f36293f05',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -282,7 +298,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '516-XXX-XX',
     contactPerson: '周老师',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=7ab592ae-52cd-414a-bf3b-73adab0023a5',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -306,7 +322,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=5532b8cc-f9ef-441a-8008-41505fd2879d',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -329,7 +345,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -353,7 +369,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -376,7 +392,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -400,7 +416,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -423,7 +439,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=20c5b224-5471-474e-89c7-e7d50be12306',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -447,7 +463,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -470,7 +486,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -494,7 +510,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=04912ca4-4c3d-44cc-aa08-d9415659fa40&planId',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
   {
@@ -517,7 +533,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     contactPhone: '',
     contactPerson: '',
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=a1b2c3d4-5678-90ab-cdef-1234567890ab',
-    status: 'pending',
+    status: 'assigned',
     relatedOpportunityCount: 0,
   },
 ]
@@ -726,14 +742,14 @@ export interface HistoricalCase {
 export const mockHistoricalCases: HistoricalCase[] = [
   {
     id: 'case-001',
-    industry: '金融',
-    subIndustry: '国有银行',
-    region: '北京',
-    customerName: '某大型国有银行',
+    industry: '制造',
+    subIndustry: '离散轻工',
+    region: '江苏',
+    customerName: '某大型制造业客户',
     projectName: '基础设施一体化建设项目',
     orderTime: 'FY25Q3',
-    product: '服务器',
-    businessScenario: '智能化转型',
+    product: 'xxx 服务器',
+    businessScenario: '高等教育行业 – 校园IT基础设施',
     totalAmount: 5,
     ar: 'chenly15',
     ss: 'chenly16',

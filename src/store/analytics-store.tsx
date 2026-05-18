@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useRef, useEffect, type ReactNode } from 'react'
+﻿import { createContext, useContext, useCallback, useRef, useEffect, type ReactNode } from 'react'
 
 // ===== Types =====
 
@@ -31,6 +31,7 @@ interface AnalyticsState {
   getClickPaths: () => ClickPathEntry[]
   clearChatLogs: () => void
   clearClickPaths: () => void
+  clearAll: () => void
   exportChatLogsCSV: () => string
   exportClickPathsCSV: () => string
   fetchServerData: () => Promise<void>
@@ -240,6 +241,17 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     deleteFromServer('/clicks')
   }, [])
 
+  const clearAll = useCallback(() => {
+    chatLogsRef.current = []
+    clickPathsRef.current = []
+    localStorage.removeItem(CHAT_LOG_KEY)
+    localStorage.removeItem(CLICK_PATH_KEY)
+    localStorage.removeItem('analytics_user_id')
+    sessionStorage.removeItem('analytics_session_id')
+    deleteFromServer('/chat')
+    deleteFromServer('/clicks')
+  }, [])
+
   const exportChatLogsCSV = useCallback(() => {
     const headers = ['ID', 'Timestamp', 'UserID', 'SessionID', 'UserInput', 'SystemResponse', 'DetectedIntent', 'ResponseType']
     const rows = chatLogsRef.current.map(e => [
@@ -265,7 +277,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       value={{
         logChat, logClick,
         getChatLogs, getClickPaths,
-        clearChatLogs, clearClickPaths,
+        clearChatLogs, clearClickPaths, clearAll,
         exportChatLogsCSV, exportClickPathsCSV,
         fetchServerData,
         sessionId,

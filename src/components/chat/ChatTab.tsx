@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+﻿import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Sparkles, MapPin, ChevronRight, Clock, Banknote,
@@ -15,8 +15,8 @@ import { cn } from '@/lib/utils'
 type PresetPrompt = { text: string; icon: LucideIcon; badgeClass: string }
 const PRESET_PROMPTS: PresetPrompt[][] = [
   [
-    { text: '推送最新的10条标讯线索信息', icon: Lightbulb, badgeClass: 'bg-gradient-to-br from-[hsl(217_91%_54%)] to-[hsl(226_100%_59%)]' },
-    { text: '分析北大口腔医院Q2的采购需求', icon: TrendingUp, badgeClass: 'bg-gradient-to-br from-[hsl(0_80%_62%)] to-[hsl(20_90%_58%)]' },
+    { text: '在哪里查询ISG立项是否需要渠道合同反馈', icon: Lightbulb, badgeClass: 'bg-gradient-to-br from-[hsl(217_91%_54%)] to-[hsl(226_100%_59%)]' },
+    { text: '测试场景推荐问题', icon: TrendingUp, badgeClass: 'bg-gradient-to-br from-[hsl(0_80%_62%)] to-[hsl(20_90%_58%)]' },
   ],
   [
     { text: '查看今天待跟进的标讯', icon: FileSearch, badgeClass: 'bg-gradient-to-br from-[hsl(217_91%_54%)] to-[hsl(226_100%_59%)]' },
@@ -52,7 +52,7 @@ interface Message {
   type?: 'text' | 'bid-alert' | 'quick-actions' | 'bid-list' | 'bid-carousel' | 'bid-batch'
   bidId?: string
   actions?: { label: string; action: string }[]
-  listFilter?: 'all' | 'pending'
+  listFilter?: 'all' | 'assigned'
   filteredBidIds?: string[]  // 新增：预过滤的标讯ID列表
   carouselTitle?: string     // bid-carousel 顶部标题
   carouselSubtitle?: string  // bid-carousel 顶部副标题
@@ -98,7 +98,7 @@ export function ChatTab() {
   }, [bids])
 
   const handleAction = (action: string) => {
-    const pendingBids = bids.filter(b => b.status === 'pending')
+    const assignedBids = bids.filter(b => b.status === 'assigned')
 
     // Log quick action click
     logClick({
@@ -111,15 +111,15 @@ export function ChatTab() {
     switch (action) {
       case 'view_latest':
         addMessage({ role: 'user', content: '查看最新标讯' })
-        if (pendingBids[0]) {
+        if (assignedBids[0]) {
           simulateAgentReply(
-            `最新一条标讯：\n\n📋 **${pendingBids[0].projectName}**\n🏢 ${pendingBids[0].procurementUnit || '未公示'}\n💰 预算 ${pendingBids[0].budgetAmount}万 · ${pendingBids[0].industry}\n📍 ${pendingBids[0].region} · ${pendingBids[0].city}\n\n点击下方按钮查看完整详情并处理。`,
+            `最新一条标讯：\n\n📋 **${assignedBids[0].projectName}**\n🏢 ${assignedBids[0].procurementUnit || '未公示'}\n💰 预算 ${assignedBids[0].budgetAmount}万 · ${assignedBids[0].industry}\n📍 ${assignedBids[0].region} · ${assignedBids[0].city}\n\n点击下方按钮查看完整详情并处理。`,
             700,
             {
               type: 'quick-actions',
-              bidId: pendingBids[0].id,
+              bidId: assignedBids[0].id,
               actions: [
-                { label: '查看详情并处理', action: `goto_${pendingBids[0].id}` },
+                { label: '查看详情并处理', action: `goto_${assignedBids[0].id}` },
                 { label: '跳过，看下一条', action: 'next_bid' },
               ],
             }
@@ -138,7 +138,7 @@ export function ChatTab() {
 
       case 'next_bid': {
         addMessage({ role: 'user', content: '看下一条' })
-        const unprocessed = pendingBids.slice(1)
+        const unprocessed = assignedBids.slice(1)
         if (unprocessed.length > 0) {
           simulateAgentReply(
             `下一条标讯：\n\n📋 **${unprocessed[0].projectName}**\n🏢 ${unprocessed[0].procurementUnit || '未公示'}\n💰 预算 ${unprocessed[0].budgetAmount}万 · ${unprocessed[0].industry}\n📍 ${unprocessed[0].region} · ${unprocessed[0].city}`,
@@ -187,7 +187,7 @@ export function ChatTab() {
     })
   }
 
-  const pendingBids = bids.filter(b => b.status === 'pending')
+  const assignedBids = bids.filter(b => b.status === 'assigned')
   const currentPrompts = useMemo(
     () => PRESET_PROMPTS[promptPoolIndex % PRESET_PROMPTS.length],
     [promptPoolIndex]
@@ -233,7 +233,7 @@ export function ChatTab() {
   }
 
   const handleDataCardClick = (key: 'visits' | 'bids') => {
-    const prompt = key === 'bids' ? '待我处理的标讯' : '待拜访的客户'
+    const prompt = key === 'bids' ? '待我处理的标讯' : '测试任务'
     logClick({
       description: `点击数据卡片「${prompt}」`,
       category: '数据入口',
@@ -263,7 +263,7 @@ export function ChatTab() {
                   key={msg.id}
                   message={msg}
                   allBids={bids}
-                  pendingBids={pendingBids}
+                  assignedBids={assignedBids}
                   onAction={handleAction}
                   onBidClick={(id) => navigate(`/bid/${id}`)}
                 />
@@ -406,7 +406,7 @@ function WelcomeScreen({
       <div className="mt-10 grid grid-cols-2 gap-2.5">
         <button
           onClick={() => onDataCardClick('visits')}
-          data-track="点击待拜访客户卡片"
+          data-track="点击测试任务卡片"
           data-track-type="数据入口"
           className="glass-card rounded-2xl p-3 text-left shadow-[0_6px_18px_-8px_rgba(100,80,200,0.2)] active:scale-[0.98] transition-transform"
         >
@@ -414,15 +414,15 @@ function WelcomeScreen({
             <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[hsl(152_69%_41%)] text-white">
               <CheckSquare className="h-3 w-3" />
             </span>
-            <span className="text-[13px] font-semibold text-foreground">待拜访客户</span>
+            <span className="text-[13px] font-semibold text-foreground">测试任务</span>
           </div>
           <div className="space-y-1">
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
-              <span>未开发客户</span>
+              <span>任务关键数量 X</span>
               <span><span className="text-[16px] font-bold text-foreground">{visitStats.undeveloped}</span>家</span>
             </div>
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
-              <span>已沟通客户</span>
+              <span>任务关键数量 Y</span>
               <span><span className="text-[16px] font-bold text-foreground">{visitStats.contacted}</span>家</span>
             </div>
           </div>
@@ -430,7 +430,7 @@ function WelcomeScreen({
 
         <button
           onClick={() => onDataCardClick('bids')}
-          data-track="点击待处理标讯卡片"
+          data-track="点击已分配标讯卡片"
           data-track-type="数据入口"
           className="glass-card rounded-2xl p-3 text-left shadow-[0_6px_18px_-8px_rgba(100,80,200,0.2)] active:scale-[0.98] transition-transform"
         >
@@ -438,7 +438,7 @@ function WelcomeScreen({
             <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[hsl(268_80%_60%)] text-white">
               <Tv className="h-3 w-3" />
             </span>
-            <span className="text-[13px] font-semibold text-foreground">待处理标讯</span>
+            <span className="text-[13px] font-semibold text-foreground">已分配标讯</span>
           </div>
           <div className="space-y-1">
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
@@ -490,25 +490,25 @@ function WelcomeScreen({
 // ==========================================
 // Inline bid list component for chat
 // ==========================================
-const statusConfig: Record<string, { label: string; variant: 'new' | 'done' | 'destructive' }> = {
-  pending: { label: '已分配（待跟进）', variant: 'new' },
-  linked: { label: '已反馈（关联已有商机）', variant: 'done' },
-  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' },
-  new_opportunity: { label: '已反馈（新商机）', variant: 'done' },
+const statusConfig: Record<string, { label: string; variant: 'new' | 'done' | 'destructive' | 'warning' }> = {
+  assigned: { label: '已分配', variant: 'new' },
+  following: { label: '跟进中', variant: 'warning' },
+  converted: { label: '已转化', variant: 'done' },
+  abandoned: { label: '已放弃', variant: 'destructive' },
 }
 
-type ListFilter = 'all' | 'pending' | 'feedback'
+type ListFilter = 'all' | 'assigned' | 'following' | 'converted' | 'abandoned'
 
 const VISIBLE_LIMIT = 3
 
 function ChatBidList({ allBids, initialFilter, filteredBidIds, onBidClick }: {
   allBids: BidInfo[]
-  initialFilter: 'all' | 'pending'
+  initialFilter: 'all' | 'assigned'
   filteredBidIds?: string[]
   onBidClick: (id: string) => void
 }) {
   const mapInitial = (f: string): ListFilter => {
-    if (f === 'pending') return 'pending'
+    if (f === 'assigned') return 'assigned'
     return 'all'
   }
   const [activeFilter, setActiveFilter] = useState<ListFilter>(mapInitial(initialFilter))
@@ -516,15 +516,19 @@ function ChatBidList({ allBids, initialFilter, filteredBidIds, onBidClick }: {
 
   const filters: { key: ListFilter; label: string; count: number }[] = [
     { key: 'all', label: '全部', count: allBids.length },
-    { key: 'pending', label: '待跟进', count: allBids.filter(b => b.status === 'pending').length },
-    { key: 'feedback', label: '已反馈', count: allBids.filter(b => ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)).length },
+    { key: 'assigned', label: '已分配', count: allBids.filter(b => b.status === 'assigned').length },
+    { key: 'following', label: '跟进中', count: allBids.filter(b => b.status === 'following').length },
+    { key: 'converted', label: '已转化', count: allBids.filter(b => b.status === 'converted').length },
+    { key: 'abandoned', label: '已放弃', count: allBids.filter(b => b.status === 'abandoned').length },
   ]
 
   const filtered = filteredBidIds && filteredBidIds.length > 0
     ? allBids.filter(b => filteredBidIds.includes(b.id))
     : allBids.filter(b => {
-        if (activeFilter === 'pending') return b.status === 'pending'
-        if (activeFilter === 'feedback') return ['linked', 'no_opportunity', 'new_opportunity'].includes(b.status)
+        if (activeFilter === 'assigned') return b.status === 'assigned'
+        if (activeFilter === 'following') return b.status === 'following'
+        if (activeFilter === 'converted') return b.status === 'converted'
+        if (activeFilter === 'abandoned') return b.status === 'abandoned'
         return true
       })
 
@@ -895,10 +899,10 @@ function BidBatch({ bids, onBidClick }: {
 // ==========================================
 // Chat message renderer
 // ==========================================
-function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
+function ChatMessage({ message, allBids, assignedBids, onAction, onBidClick }: {
   message: Message
   allBids: BidInfo[]
-  pendingBids: BidInfo[]
+  assignedBids: BidInfo[]
   onAction: (action: string) => void
   onBidClick: (id: string) => void
 }) {
@@ -981,7 +985,7 @@ function ChatMessage({ message, allBids, pendingBids, onAction, onBidClick }: {
 
   // Bid alert cards (unified with ChatBidList card UI)
   if (message.type === 'bid-alert') {
-    const visibleAlertBids = pendingBids.slice(0, VISIBLE_LIMIT)
+    const visibleAlertBids = assignedBids.slice(0, VISIBLE_LIMIT)
 
     return (
       <div className="flex items-start gap-2.5 animate-fade-in">
@@ -1137,7 +1141,7 @@ function matchAny(text: string, keywords: string[]): boolean {
 }
 
 function detectIntent(text: string, bids: BidInfo[]): IntentResult {
-  const pendingBids = bids.filter(b => b.status === 'pending')
+  const assignedBids = bids.filter(b => b.status === 'assigned')
 
   // --- 0a. 推送最新N条标讯线索（预置问题触发）---
   if (matchAny(text, ['推送最新', '最新的标讯线索', '标讯线索信息']) || /最新的\s*\d+\s*条/.test(text)) {
@@ -1145,8 +1149,8 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
     const N = m ? Math.min(parseInt(m[1]), bids.length) : Math.min(10, bids.length)
     // 按 id 倒序近似作为“最新”，并优先待跟进的
     const sorted = [...bids].sort((a, b) => {
-      const pa = a.status === 'pending' ? 0 : 1
-      const pb = b.status === 'pending' ? 0 : 1
+      const pa = a.status === 'assigned' ? 0 : 1
+      const pb = b.status === 'assigned' ? 0 : 1
       if (pa !== pb) return pa - pb
       return b.id.localeCompare(a.id)
     })
@@ -1164,24 +1168,23 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
     }
   }
 
-  // --- 0b. 标讯管理（快捷入口）— 卡片轮播全部标讯 ---
+  // --- 0b. 标讯管理（快捷入口）— 卡片垂直平铺分批展开 ---
   if (matchAny(text, ['标讯管理'])) {
+    const myBids = assignedBids.length > 0 ? assignedBids : bids
     return {
       intentName: 'bid_management',
-      content: `🗂️ 已汇总你的全部标讯（${bids.length} 条），以卡片形式展示，左右滑动浏览：`,
+      content: `您有 **${myBids.length} 条**已分配标讯：`,
       delay: 500,
       extras: {
-        type: 'bid-carousel',
-        carouselTitle: '智能标讯',
-        carouselSubtitle: `共 ${bids.length} 条，左右滑动查看`,
-        filteredBidIds: bids.map(b => b.id),
+      type: 'bid-batch',
+        filteredBidIds: myBids.map(b => b.id),
       },
     }
   }
 
   // --- 0c. 待我处理的标讯（数据卡片触发）— 卡片垂直平铺分批展开 ---
-  if (matchAny(text, ['待我处理的标讯', '待处理的标讯', '待处理标讯', '我的标讯'])) {
-    const myBids = pendingBids.length > 0 ? pendingBids : bids
+  if (matchAny(text, ['待我处理的标讯', '待处理的标讯', '已分配标讯', '我的标讯'])) {
+    const myBids = assignedBids.length > 0 ? assignedBids : bids
     return {
       intentName: 'my_pending_bids',
       content: `您有 **${myBids.length} 条**待您处理的标讯：`,
@@ -1198,7 +1201,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
     const regionMap: Record<string, number> = {}
     const industryMap: Record<string, number> = {}
     let totalBudget = 0
-    for (const b of pendingBids) {
+    for (const b of assignedBids) {
       regionMap[b.region] = (regionMap[b.region] || 0) + 1
       industryMap[b.industry] = (industryMap[b.industry] || 0) + 1
       totalBudget += parseFloat(b.budgetAmount) || 0
@@ -1216,7 +1219,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
 
     return {
       intentName: 'bid_insight',
-      content: `🔍 **标讯洞察**\n\n📋 待跟进：**${pendingBids.length} 条**\n💰 总预算：**${totalBudget.toFixed(0)} 万元**\n🗺️ Top 区域：${regionSummary}\n🏢 Top 行业：${industrySummary}\n\n以下是全部标讯，点击条目可查看详情：`,
+      content: `🔍 **标讯洞察**\n\n📋 待跟进：**${assignedBids.length} 条**\n💰 总预算：**${totalBudget.toFixed(0)} 万元**\n🗺️ Top 区域：${regionSummary}\n🏢 Top 行业：${industrySummary}\n\n以下是全部标讯，点击条目可查看详情：`,
       delay: 600,
       extras: { type: 'bid-list', listFilter: 'all' },
     }
@@ -1226,7 +1229,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   if (matchAny(text, ['你好', '您好', 'hello', 'hi', '嗨', '早上好', '下午好', '晚上好', '早'])) {
     return {
       intentName: 'greeting',
-      content: `你好！👋 当前有 **${pendingBids.length} 条标讯**待跟进。需要我帮你快速查看吗？`,
+      content: `你好！👋 当前有 **${assignedBids.length} 条标讯**待跟进。需要我帮你快速查看吗？`,
       delay: 500,
       extras: {
         type: 'quick-actions',
@@ -1267,7 +1270,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
     const regionMap: Record<string, number> = {}
     const industryMap: Record<string, number> = {}
     let totalBudget = 0
-    for (const b of pendingBids) {
+    for (const b of assignedBids) {
       regionMap[b.region] = (regionMap[b.region] || 0) + 1
       industryMap[b.industry] = (industryMap[b.industry] || 0) + 1
       totalBudget += parseFloat(b.budgetAmount) || 0
@@ -1277,7 +1280,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
 
     return {
       intentName: 'statistics',
-      content: `📊 当前标讯概况：\n\n📋 待跟进标讯：**${pendingBids.length} 条**\n💰 总预算规模：**${totalBudget.toFixed(0)}万元**\n\n🗺️ 区域分布：${regionSummary}\n🏢 行业分布：${industrySummary}`,
+      content: `📊 当前标讯概况：\n\n📋 待跟进标讯：**${assignedBids.length} 条**\n💰 总预算规模：**${totalBudget.toFixed(0)}万元**\n\n🗺️ 区域分布：${regionSummary}\n🏢 行业分布：${industrySummary}`,
       delay: 700,
       extras: {
         type: 'quick-actions',
@@ -1292,7 +1295,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   const matchedRegion = REGIONS.find(r => text.includes(r))
   if (matchedRegion) {
     const regionKey = matchedRegion === '四川' ? '川藏' : matchedRegion
-    const regionBids = pendingBids.filter(b => b.region === regionKey || b.province.includes(matchedRegion))
+    const regionBids = assignedBids.filter(b => b.region === regionKey || b.province.includes(matchedRegion))
     if (regionBids.length > 0) {
       return {
         intentName: 'filter_region',
@@ -1318,7 +1321,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   const matchedIndustry = INDUSTRIES.find(i => text.includes(i))
   if (matchedIndustry) {
     const industryKey = matchedIndustry === '医疗' ? '医疗卫生' : matchedIndustry
-    const industryBids = pendingBids.filter(b => b.industry === industryKey)
+    const industryBids = assignedBids.filter(b => b.industry === industryKey)
     if (industryBids.length > 0) {
       return {
         intentName: 'filter_industry',
@@ -1338,7 +1341,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   if (matchAny(text, ['预算', '金额', '大项目', '高预算', '多少钱'])) {
     const budgetMatch = text.match(/(\d+)\s*万/)
     const threshold = budgetMatch ? parseInt(budgetMatch[1]) : 500
-    const highBudget = pendingBids
+    const highBudget = assignedBids
       .filter(b => (parseFloat(b.budgetAmount) || 0) >= threshold)
       .sort((a, b) => (parseFloat(b.budgetAmount) || 0) - (parseFloat(a.budgetAmount) || 0))
 
@@ -1384,7 +1387,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   if (matchAny(text, ['标讯', '新的', '待处理', '待办', '未处理', '没处理', '处理'])) {
     return {
       intentName: 'view_pending',
-      content: `当前有 **${pendingBids.length} 条**标讯待跟进，需要我帮你逐条处理吗？`,
+      content: `当前有 **${assignedBids.length} 条**标讯待跟进，需要我帮你逐条处理吗？`,
       delay: 700,
       extras: {
         type: 'quick-actions',
@@ -1410,7 +1413,7 @@ function detectIntent(text: string, bids: BidInfo[]): IntentResult {
   const matchedKeyword = techKeywords.find(k => text.includes(k))
   if (matchedKeyword) {
     const kw = matchedKeyword.toUpperCase() === 'AI' ? 'AI' : matchedKeyword
-    const matched = pendingBids.filter(b =>
+    const matched = assignedBids.filter(b =>
       b.keywords.toLowerCase().includes(matchedKeyword) ||
       b.projectName.toLowerCase().includes(matchedKeyword) ||
       b.procurementSummary.toLowerCase().includes(matchedKeyword)

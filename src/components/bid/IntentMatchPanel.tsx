@@ -1,12 +1,12 @@
-import { type BidInfo } from '@/data/mock-data'
+﻿import { type BidInfo } from '@/data/mock-data'
 import { Link2, Sparkles, X, CheckCircle2, ChevronRight, Circle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const statusLabel = (s: BidInfo['status']) => ({
-  pending: '已分配（待跟进）',
-  linked: '已反馈（关联已有商机）',
-  no_opportunity: '已反馈（无商机）',
-  new_opportunity: '已反馈（新商机）',
+  assigned: '已分配',
+  following: '跟进中',
+  converted: '已转化',
+  abandoned: '已放弃',
 }[s])
 
 // =============== 顶部提醒条（三态紧凑常驻） ===============
@@ -192,3 +192,5 @@ function IntentBidMiniCard({ bid, actionSlot }: { bid: BidInfo; actionSlot?: Rea
     </div>
   )
 }
+
+

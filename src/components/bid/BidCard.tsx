@@ -1,4 +1,4 @@
-import { type BidInfo, industryColors } from '@/data/mock-data'
+﻿import { type BidInfo, industryColors } from '@/data/mock-data'
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Clock, Star, Tag } from 'lucide-react'
 
@@ -8,10 +8,10 @@ interface BidCardProps {
 }
 
 const statusConfig = {
-  pending: { label: '已分配（待跟进）', variant: 'new' as const },
-  linked: { label: '已反馈（关联已有商机）', variant: 'done' as const },
-  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' as const },
-  new_opportunity: { label: '已反馈（新商机）', variant: 'done' as const },
+  assigned: { label: '已分配', variant: 'new' as const },
+  following: { label: '跟进中', variant: 'warning' as const },
+  converted: { label: '已转化', variant: 'done' as const },
+  abandoned: { label: '已放弃', variant: 'destructive' as const },
 }
 
 export function BidCard({ bid, onClick }: BidCardProps) {

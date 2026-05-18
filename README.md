@@ -1,4 +1,4 @@
-# 销售通 - 智能标讯管理
+﻿# 销售通 - 智能标讯管理
 
 > 面向传统制造业销售人员的移动端智能助手原型，通过 AI 对话交互帮助销售高效处理招标信息、关联商机。
 > 配套 PC 分析看板实时汇聚多设备用户行为数据，用于原型测试验证。
@@ -192,7 +192,8 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
   - 按钮使用 `<button>` 元素，添加 `active:scale-95` 点击缩放动画反馈，提升触控体验
   - 补充 `data-track="拨号采购人"` 埋点属性，PC 分析看板可统计用户拨号行为
 - 原始公告链接跳转
-- 两种商机操作：新建商机 / 标记无商机
+- **产品信息模块**：展示产品标签、标讯关键词、产品经理三个字段
+- 商机操作：【关联已有商机】【新建商机】【无商机】【跟进中】四种反馈按钮
 
 **标讯状态流转：**
 
@@ -398,7 +399,7 @@ interface BidInfo {
   sourceUrl: string          // 原始公告链接
   cdbId?: string             // 客户主数据库唯一编号
   // 状态：pending=已分配(待跟进)；linked=已关联意向招标；no_opportunity/new_opportunity=已反馈（无商机/新商机）
-  status: 'pending' | 'linked' | 'no_opportunity' | 'new_opportunity'
+  status: 'assigned' | 'following' | 'converted' | 'abandoned'
   // 关联意向招标决策（仅 bidType=实时招标 适用）
   linkedIntentBidIds?: string[]      // 系统匹配的候选意向招标 id 列表
   linkedIntentBidId?: string | null  // undefined=未决策、null=明确不关联、string=已关联

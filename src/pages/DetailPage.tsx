@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom'
+﻿import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,9 @@ import { LinkedRealtimeBidsPanel } from '@/components/bid/LinkedRealtimeBidsPane
 import {
   MapPin, Clock, Building2, Phone, User, Tag,
   Link2, XCircle, PlusCircle, ExternalLink,
-  Banknote, Calendar, Layers, Globe, FileText, ChevronRight, Hash, Star, Sparkles, BookOpen
+  Banknote, Calendar, Layers, Globe, FileText, ChevronRight, Hash, Star, Sparkles, BookOpen,
+  MessageSquare, Pencil,
+  Package, KeyRound, UserCog,
 } from 'lucide-react'
 // Phone number masking — prototype demo only, prevent testers from calling real contacts
 function maskPhone(phone: string): string {
@@ -33,19 +35,20 @@ function maskPhone(phone: string): string {
 import { LinkOpportunitySheet } from '@/components/bid/LinkOpportunitySheet'
 import { NoOpportunitySheet } from '@/components/bid/NoOpportunitySheet'
 import { CreateOpportunitySheet } from '@/components/bid/CreateOpportunitySheet'
+import { FollowUpSheet } from '@/components/bid/FollowUpSheet'
 import { useToast } from '@/components/ui/toast'
 
 const statusConfig = {
-  pending: { label: '已分配（待跟进）', variant: 'new' as const },
-  linked: { label: '已反馈（关联已有商机）', variant: 'done' as const },
-  no_opportunity: { label: '已反馈（无商机）', variant: 'destructive' as const },
-  new_opportunity: { label: '已反馈（新商机）', variant: 'done' as const },
+  assigned: { label: '已分配', variant: 'new' as const },
+  following: { label: '跟进中', variant: 'warning' as const },
+  converted: { label: '已转化', variant: 'done' as const },
+  abandoned: { label: '已放弃', variant: 'destructive' as const },
 }
 
 export function DetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { bids, updateBidStatus, linkIntentBid, markNoLink } = useAppState()
+  const { bids, updateBidStatus, updateBidFeedback, updateFollowUpRemark, linkIntentBid, markNoLink } = useAppState()
   const { showToast } = useToast()
 
   const bid = bids.find(b => b.id === id)
@@ -53,6 +56,7 @@ export function DetailPage() {
   const [showLinkSheet, setShowLinkSheet] = useState(false)
   const [showNoOppSheet, setShowNoOppSheet] = useState(false)
   const [showCreateSheet, setShowCreateSheet] = useState(false)
+  const [showFollowUpSheet, setShowFollowUpSheet] = useState(false)
   const [showIntentSheet, setShowIntentSheet] = useState(false)
 
   if (!bid) {
@@ -65,7 +69,8 @@ export function DetailPage() {
   }
 
   const status = statusConfig[bid.status]
-  const isProcessed = bid.status !== 'pending'
+  const isProcessed = bid.status !== 'assigned' && bid.status !== 'following'
+  const isFollowing = bid.status === 'following'
   const industryClass = industryColors[bid.industry] || 'bg-secondary text-muted-foreground'
 
   // 实时招标 ↔ 意向招标 关联计算
@@ -82,25 +87,37 @@ export function DetailPage() {
     ? bids.filter(b => b.linkedIntentBidId === bid.id)
     : []
   // 是否需要隐藏反馈底部区：实时招标未决策 或 已关联意向招标
-  const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null
-  const showFeedbackBar = !isProcessed && !shouldHideFeedback
+  const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null && bid.linkedIntentBidId !== undefined
+  const showFeedbackBar = (!isProcessed || isFollowing) && !shouldHideFeedback
 
-  const handleLink = (oppId: string) => {
-    updateBidStatus(bid.id, 'linked', oppId)
+  const handleLink = (oppId: string, linkedCdbId?: string) => {
+    updateBidFeedback(bid.id, 'converted', { relatedOpportunityId: oppId, linkedCdbId })
     setShowLinkSheet(false)
     showToast('已成功关联商机', 'success')
   }
 
-  const handleNoOpp = () => {
-    updateBidStatus(bid.id, 'no_opportunity')
+  const handleNoOpp = (data: { hasIsgProduct: '是' | '否' }) => {
+    updateBidFeedback(bid.id, 'abandoned', { noOppHasIsgProduct: data.hasIsgProduct })
     setShowNoOppSheet(false)
     showToast('已反馈无商机', 'success')
   }
 
   const handleCreate = () => {
-    updateBidStatus(bid.id, 'new_opportunity', 'T023043423X')
+    updateBidStatus(bid.id, 'converted', 'T023043423X')
     setShowCreateSheet(false)
     showToast('新商机创建成功', 'success')
+  }
+
+  const handleFollowUp = (remark: string) => {
+    if (isFollowing) {
+      updateFollowUpRemark(bid.id, remark)
+      setShowFollowUpSheet(false)
+      showToast('跟进备注已更新', 'success')
+    } else {
+      updateBidFeedback(bid.id, 'following', { followUpRemark: remark })
+      setShowFollowUpSheet(false)
+      showToast('已标记为跟进中', 'success')
+    }
   }
 
   return (
@@ -187,6 +204,18 @@ export function DetailPage() {
           </div>
         </div>
 
+        {/* Product Info */}
+        {(bid.productLabel || bid.bidKeywords || bid.productManager) && (
+          <div className="bg-card mx-4 mt-3 rounded-xl border p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">产品信息</h2>
+            <div className="grid grid-cols-1 gap-3">
+              {bid.productLabel && <InfoCell icon={<Package className="h-3.5 w-3.5" />} label="产品标签" value={bid.productLabel} highlight />}
+              {bid.bidKeywords && <InfoCell icon={<KeyRound className="h-3.5 w-3.5" />} label="标讯关键词" value={bid.bidKeywords} />}
+              {bid.productManager && <InfoCell icon={<UserCog className="h-3.5 w-3.5" />} label="产品经理" value={bid.productManager} />}
+            </div>
+          </div>
+        )}
+
         {/* Procurement Summary */}
         <div className="bg-card mx-4 mt-3 rounded-xl border p-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">采购需求概况</h2>
@@ -230,6 +259,28 @@ export function DetailPage() {
             </div>
             <p className="text-sm font-medium text-foreground line-clamp-1 break-all">{linkedIntent.procurementUnit}</p>
             <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 break-all">{linkedIntent.projectName}</p>
+          </div>
+        )}
+
+        {/* 跟进中信息卡片 */}
+        {isFollowing && bid.followUpRemark && (
+          <div className="bg-warning-muted mx-4 mt-3 rounded-xl border border-warning/20 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-warning" />
+                <span className="text-xs font-semibold text-warning">跟进备注</span>
+              </div>
+              <button
+                onClick={() => setShowFollowUpSheet(true)}
+                className="flex items-center gap-1 text-xs text-warning hover:text-warning/80"
+                data-track="编辑跟进备注"
+                data-track-type="商机处理"
+              >
+                <Pencil className="h-3 w-3" />
+                编辑
+              </button>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{bid.followUpRemark}</p>
           </div>
         )}
 
@@ -329,15 +380,18 @@ export function DetailPage() {
         </div>
 
         {/* Related Opportunity (if linked) */}
-        {(bid.status === 'linked' || bid.status === 'new_opportunity') && bid.relatedOpportunityId && (
+        {(bid.status === 'converted') && bid.relatedOpportunityId && (
           <div className="bg-success-muted mx-4 mb-4 rounded-xl border border-success/20 p-4">
             <div className="flex items-center gap-2 mb-1">
               <Link2 className="h-4 w-4 text-success" />
               <span className="text-xs font-semibold text-success">
-                {bid.status === 'linked' ? '已关联商机' : '新建商机'}
+                {'已转化商机'}
               </span>
             </div>
             <p className="text-sm font-medium text-foreground">商机编号：{bid.relatedOpportunityId}</p>
+            {bid.linkedCdbId && (
+              <p className="text-xs text-muted-foreground mt-0.5">补录CDBID：{bid.linkedCdbId}</p>
+            )}
           </div>
         )}
       </div>
@@ -346,11 +400,11 @@ export function DetailPage() {
       {showFeedbackBar && (
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t bg-card px-4 pt-3 safe-bottom"
           style={{ boxShadow: 'var(--shadow-bottom-bar)' }}>
-          <div className="mx-auto max-w-[480px] flex gap-2.5">
+          <div className="mx-auto max-w-[480px] flex gap-2">
             <Button
               variant="outline"
               size="full"
-              className="flex-1 gap-1.5"
+              className="flex-1 gap-1 px-0"
               onClick={() => setShowNoOppSheet(true)}
               data-track="标记为「无商机」"
               data-track-type="商机处理"
@@ -361,24 +415,35 @@ export function DetailPage() {
             <Button
               variant="default"
               size="full"
-              className="flex-1 gap-1.5"
+              className="flex-1 gap-1 px-0"
               onClick={() => setShowLinkSheet(true)}
               data-track="关联已有商机"
               data-track-type="商机处理"
             >
               <Link2 className="h-4 w-4" />
-              关联商机
+              关联
             </Button>
             <Button
               variant="success"
               size="full"
-              className="flex-1 gap-1.5"
+              className="flex-1 gap-1 px-0"
               onClick={() => setShowCreateSheet(true)}
               data-track="新建商机"
               data-track-type="商机处理"
             >
               <PlusCircle className="h-4 w-4" />
               新建
+            </Button>
+            <Button
+              variant={isFollowing ? "warning" : "outline"}
+              size="full"
+              className="flex-1 gap-1 px-0"
+              onClick={() => setShowFollowUpSheet(true)}
+              data-track={isFollowing ? "编辑跟进备注" : "标记为「跟进中」"}
+              data-track-type="商机处理"
+            >
+              <MessageSquare className="h-4 w-4" />
+              {isFollowing ? '跟进' : '跟进中'}
             </Button>
           </div>
         </div>
@@ -403,6 +468,13 @@ export function DetailPage() {
           bid={bid}
           onClose={() => setShowCreateSheet(false)}
           onSubmit={handleCreate}
+        />
+      )}
+      {showFollowUpSheet && (
+        <FollowUpSheet
+          bid={bid}
+          onClose={() => setShowFollowUpSheet(false)}
+          onSubmit={handleFollowUp}
         />
       )}
       {showIntentSheet && isRealtime && (
