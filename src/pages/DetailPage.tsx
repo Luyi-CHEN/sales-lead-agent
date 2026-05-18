@@ -86,8 +86,8 @@ export function DetailPage() {
   const reverseLinkedRealtimes = isIntent
     ? bids.filter(b => b.linkedIntentBidId === bid.id)
     : []
-  // 是否需要隐藏反馈底部区：实时招标未决策 或 已关联意向招标
-  const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null && bid.linkedIntentBidId !== undefined
+  // 是否需要隐藏反馈底部区：实时招标未决策（需先完成关联决策）或 已关联意向招标
+  const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null
   const showFeedbackBar = (!isProcessed || isFollowing) && !shouldHideFeedback
 
   const handleLink = (oppId: string, linkedCdbId?: string) => {
@@ -513,3 +513,4 @@ function InfoCell({ icon, label, value, highlight, muted }: {
     </div>
   )
 }
+
