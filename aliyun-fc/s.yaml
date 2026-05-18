@@ -1,0 +1,42 @@
+﻿# Serverless Devs 部署配置
+# 安装工具: npm install @serverless-devs/s -g
+# 部署命令: s deploy
+
+edition: 3.0.0
+name: sales-lead-agent
+access: default
+
+vars:
+  region: cn-beijing
+  service:
+    name: sales-analytics
+    description: 销售线索智能助手 - 行为分析 API
+
+resources:
+  analytics-api:
+    component: fc3
+    props:
+      region: ${vars.region}
+      serviceName: ${vars.service.name}
+      functionName: analytics-api
+      description: Analytics API - 对话日志与点击路径收集
+      runtime: nodejs18
+      handler: index.handler
+      code: ./
+      memorySize: 128
+      timeout: 10
+      environmentVariables:
+        OSS_REGION: ${env(OSS_REGION)}
+        OSS_BUCKET: ${env(OSS_BUCKET)}
+        OSS_ACCESS_KEY_ID: ${env(OSS_ACCESS_KEY_ID)}
+        OSS_ACCESS_KEY_SECRET: ${env(OSS_ACCESS_KEY_SECRET)}
+      triggers:
+        - triggerName: http-trigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
+              - DELETE
+              - OPTIONS
