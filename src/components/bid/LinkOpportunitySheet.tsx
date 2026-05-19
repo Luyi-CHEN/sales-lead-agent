@@ -11,7 +11,6 @@ interface LinkOpportunitySheetProps {
 
 export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySheetProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
   const [selectedCdbId, setSelectedCdbId] = useState<string>('')
   const [cdbSearchQuery, setCdbSearchQuery] = useState('')
   const [manualOppId, setManualOppId] = useState('')
@@ -22,12 +21,6 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
   // 根据标讯信息筛选商机列表（客户名称统一显示当前标讯采购单位）
   const customerName = bid.procurementUnit || '未公示'
   const filteredOpportunities = mockOpportunities
-    .filter(opp =>
-      !searchQuery ||
-      opp.name.includes(searchQuery) ||
-      customerName.includes(searchQuery) ||
-      opp.id.includes(searchQuery)
-    )
 
   const trimmedManualId = manualOppId.trim()
   const hasAnyOppRef = !!selectedId || !!trimmedManualId
@@ -140,7 +133,7 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
                   </div>
                   <button
                     type="button"
-                    onClick={() => { setSelectedCdbId(''); setSelectedId(null); setSearchQuery('') }}
+                    onClick={() => { setSelectedCdbId(''); setSelectedId(null) }}
                     className="text-xs text-primary hover:text-primary/80"
                     data-track="重新选择CDBID"
                     data-track-type="商机处理"
@@ -149,20 +142,6 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
                   </button>
                 </div>
               )}
-
-              {/* Search */}
-              <div className="px-4 pb-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="搜索商机编号或名称..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="h-9 w-full rounded-lg border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              </div>
 
               {/* Bid context hint */}
               {bid.relatedOpportunityCount > 0 && (

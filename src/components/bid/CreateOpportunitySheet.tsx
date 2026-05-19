@@ -27,7 +27,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     stage: '发现需求',                       // 商机阶段，默认发现需求
     procurementMode: '普通采购',             // 采购模式，默认普通采购
     productDomain: '标准产品',               // 产品域，默认标准产品
-    expectedSignDate: '',                    // 预计签约日期（只允许当前/历史日）
+    expectedSignDate: '',                    // 预计签约日期（只允许当前/未来日）
     expectedRevenue: '',                     // 预计收入总金额（元），非必填
     totalUnitCount: '',                      // 总台数，非必填
     winRate: '10%(项目筹备期)',              // 赢率，默认10%
@@ -257,14 +257,14 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 )}
               </FormField>
 
-              {/* 预计签约日期 - 仅当前及历史日期 */}
+              {/* 预计签约日期 - 仅当前及未来日期 */}
               <FormField label="预计签约日期" required>
                 <div className="relative">
                   <input
                     type="date"
                     value={formData.expectedSignDate}
                     onChange={e => update('expectedSignDate', e.target.value)}
-                    max={new Date().toISOString().slice(0, 10)}
+                    min={new Date().toISOString().slice(0, 10)}
                     className={`h-10 w-full rounded-lg border bg-secondary px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formData.expectedSignDate ? 'text-foreground' : 'text-transparent'}`}
                   />
                   {!formData.expectedSignDate && (
@@ -273,7 +273,7 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-2xs text-muted-foreground">只能选当前日和历史日期</p>
+                <p className="mt-1 text-2xs text-muted-foreground">只能选当前日期和未来日期</p>
               </FormField>
 
               {/* 预计收入总金额（元） - 非必填 */}
