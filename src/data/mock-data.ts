@@ -1,4 +1,4 @@
-﻿export type BidStatus = 'assigned' | 'following' | 'converted' | 'abandoned'
+export type BidStatus = 'assigned' | 'following' | 'converted' | 'abandoned'
 
 export interface BidInfo {
   id: string
@@ -648,7 +648,7 @@ export const buOptions = [
 // 采购模式选项
 export const procurementModeOptions = [
   '普通采购',
-  '统签分采',
+  '统签分采（总部）',
 ]
 
 // 产品域选项

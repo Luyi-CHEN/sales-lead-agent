@@ -1,4 +1,4 @@
-﻿import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -90,8 +90,9 @@ export function DetailPage() {
   const shouldHideFeedback = isRealtime && bid.linkedIntentBidId !== null
   const showFeedbackBar = (!isProcessed || isFollowing) && !shouldHideFeedback
 
-  const handleLink = (oppId: string, linkedCdbId?: string) => {
-    updateBidFeedback(bid.id, 'converted', { relatedOpportunityId: oppId, linkedCdbId })
+  const handleLink = (oppId: string, linkedCdbId?: string, manualOppId?: string) => {
+    const finalOppId = oppId || manualOppId || ''
+    updateBidFeedback(bid.id, 'converted', { relatedOpportunityId: finalOppId, linkedCdbId })
     setShowLinkSheet(false)
     showToast('已成功关联商机', 'success')
   }

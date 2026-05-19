@@ -1,17 +1,13 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import {
   type BidInfo,
-  opportunityStages,
-  buOptions,
   procurementModeOptions,
   productDomainOptions,
   winRateOptions,
-  materialProductGroups,
   mockCustomerDatabase,
-  solutionProductGroups,
 } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
-import { X, Sparkles, ChevronDown, Trash2, Search } from 'lucide-react'
+import { X, Sparkles, ChevronDown, Search } from 'lucide-react'
 
 interface CreateOpportunitySheetProps {
   bid: BidInfo
@@ -22,7 +18,8 @@ interface CreateOpportunitySheetProps {
 export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportunitySheetProps) {
   // 系统根据标讯信息自动预填字段
   const [formData, setFormData] = useState({
-    bu: 'ISG',                              // 事业部，默认ISG
+    bu: bid.bu || 'ISG',                     // 事业部，自动取自标讯BU
+    isKt: '',                                // 是否KT商机，无默认值
     source: '标讯转化',                      // 商机来源，默认标讯转化
     name: bid.projectName || '',             // 商机名称 = 标讯项目名称
     customer: bid.procurementUnit || '',     // 客户名称 = 标讯采购单位
@@ -30,22 +27,16 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     stage: '发现需求',                       // 商机阶段，默认发现需求
     procurementMode: '普通采购',             // 采购模式，默认普通采购
     productDomain: '标准产品',               // 产品域，默认标准产品
-    expectedSignDate: '',                    // 预计签约日期
+    expectedSignDate: '',                    // 预计签约日期（只允许当前/历史日）
+    expectedRevenue: '',                     // 预计收入总金额（元），非必填
+    totalUnitCount: '',                      // 总台数，非必填
     winRate: '10%(项目筹备期)',              // 赢率，默认10%
     hasSolutionOpportunity: '',              // 是否有解决方案机会
-    remark: '',                              // 备注，默认为空
+    remark: bid.summary || '',               // 备注，默认填充标讯摘要
   })
 
   // CDBID 搜索状态
   const [cdbSearchQuery, setCdbSearchQuery] = useState('')
-
-  // 产品明细数组状态
-  const [productDetails, setProductDetails] = useState<Array<{
-    materialGroupId: string
-    productLine: string
-    estimatedAmount: string
-    solutionGroupId?: string
-  }>>([{ materialGroupId: '', productLine: '', estimatedAmount: '', solutionGroupId: '' }])
 
   // 管理各下拉框展开状态
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -58,82 +49,25 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
     setFormData(prev => ({ ...prev, [key]: val }))
   }
 
-  const handleMaterialGroupChange = (index: number, groupId: string) => {
-    const group = materialProductGroups[groupId]
-    setProductDetails(prev => prev.map((item, i) =>
-      i === index ? { ...item, materialGroupId: groupId, productLine: group?.productLine || '' } : item
-    ))
-  }
-
-  const handleSolutionGroupChange = (index: number, solutionGroupId: string) => {
-    const group = solutionProductGroups[solutionGroupId]
-    if (group) {
-      setProductDetails(prev => prev.map((item, i) =>
-        i === index ? {
-          ...item,
-          solutionGroupId,
-          materialGroupId: group.materialGroupId,
-          productLine: group.productLine
-        } : item
-      ))
-    }
-  }
-
-  const handleProductDomainChange = (val: string) => {
-    update('productDomain', val)
+  const handleIsKtChange = (val: string) => {
+    update('isKt', val)
     setOpenDropdown(null)
-    // 产品域切换时重置所有产品明细行的方案产品组和关联字段
-    setProductDetails(prev => prev.map(item => ({
-      ...item,
-      solutionGroupId: '',
-      materialGroupId: '',
-      productLine: '',
-    })))
+    if (val === '是') update('productDomain', '标准产品')
   }
 
-  const addProductDetail = () => {
-    setProductDetails(prev => [...prev, { materialGroupId: '', productLine: '', estimatedAmount: '', solutionGroupId: '' }])
-  }
-
-  const handleProductDetailChange = (index: number, field: 'estimatedAmount', value: string) => {
-    setProductDetails(prev => prev.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
-    ))
-  }
-
-  const removeProductDetail = (index: number) => {
-    setProductDetails(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const isFormValid = (() => {
-    // 基本信息必填字段验证
-    const basicFieldsValid = !!(
-      formData.bu?.trim() &&
-      formData.source?.trim() &&
-      formData.name?.trim() &&
-      formData.customer?.trim() &&
-      formData.cdbId?.trim() &&
-      formData.stage?.trim() &&
-      formData.procurementMode?.trim() &&
-      formData.productDomain?.trim() &&
-      formData.expectedSignDate?.trim() &&
-      formData.winRate?.trim() &&
-      formData.hasSolutionOpportunity?.trim()
-    )
-    if (!basicFieldsValid) return false
-
-    // 产品明细行验证
-    return productDetails.every(p => {
-      if (!p.estimatedAmount?.trim()) return false
-
-      if (formData.productDomain === '简单方案') {
-        // 简单方案：要求 solutionGroupId
-        return !!p.solutionGroupId?.trim()
-      }
-      // 标准产品 / KT：不要求 solutionGroupId，要求 materialGroupId
-      return !!p.materialGroupId?.trim()
-    })
-  })()
+  const isFormValid = !!(
+    formData.bu?.trim() &&
+    formData.isKt?.trim() &&
+    formData.source?.trim() &&
+    formData.name?.trim() &&
+    formData.customer?.trim() &&
+    formData.cdbId?.trim() &&
+    formData.procurementMode?.trim() &&
+    formData.productDomain?.trim() &&
+    formData.expectedSignDate?.trim() &&
+    formData.winRate?.trim() &&
+    formData.hasSolutionOpportunity?.trim()
+  )
 
   return (
     <>
@@ -182,12 +116,19 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
 
               {/* 事业部 */}
               <FormField label="事业部" required prefilled="自动填充标讯BU">
+                <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                  {formData.bu}
+                </div>
+              </FormField>
+
+              {/* 是否KT商机 - 选『是』时锁定产品域为标准产品 */}
+              <FormField label="是否KT商机" required>
                 <DropdownSelect
-                  value={formData.bu}
-                  options={buOptions}
-                  isOpen={openDropdown === 'bu'}
-                  onToggle={() => toggleDropdown('bu')}
-                  onSelect={(val) => { update('bu', val); setOpenDropdown(null) }}
+                  value={formData.isKt || '请选择'}
+                  options={['是', '否']}
+                  isOpen={openDropdown === 'isKt'}
+                  onToggle={() => toggleDropdown('isKt')}
+                  onSelect={handleIsKtChange}
                 />
               </FormField>
 
@@ -287,15 +228,11 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 )}
               </FormField>
 
-              {/* 商机阶段 */}
+              {/* 商机阶段 - 系统锁定为「发现需求」 */}
               <FormField label="商机阶段" required>
-                <DropdownSelect
-                  value={formData.stage}
-                  options={opportunityStages}
-                  isOpen={openDropdown === 'stage'}
-                  onToggle={() => toggleDropdown('stage')}
-                  onSelect={(val) => { update('stage', val); setOpenDropdown(null) }}
-                />
+                <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                  {formData.stage}
+                </div>
               </FormField>
 
               {/* 采购模式 */}
@@ -309,24 +246,31 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 产品域 */}
+              {/* 产品域 - 联动『是否KT商机』 */}
               <FormField label="产品域" required>
-                <DropdownSelect
-                  value={formData.productDomain}
-                  options={productDomainOptions}
-                  isOpen={openDropdown === 'productDomain'}
-                  onToggle={() => toggleDropdown('productDomain')}
-                  onSelect={handleProductDomainChange}
-                />
+                {formData.isKt === '是' ? (
+                  <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                    {formData.productDomain}
+                  </div>
+                ) : (
+                  <DropdownSelect
+                    value={formData.productDomain}
+                    options={productDomainOptions}
+                    isOpen={openDropdown === 'productDomain'}
+                    onToggle={() => toggleDropdown('productDomain')}
+                    onSelect={(val) => { update('productDomain', val); setOpenDropdown(null) }}
+                  />
+                )}
               </FormField>
 
-              {/* 预计签约日期 */}
+              {/* 预计签约日期 - 仅当前及历史日期 */}
               <FormField label="预计签约日期" required>
                 <div className="relative">
                   <input
                     type="date"
                     value={formData.expectedSignDate}
                     onChange={e => update('expectedSignDate', e.target.value)}
+                    max={new Date().toISOString().slice(0, 10)}
                     className={`h-10 w-full rounded-lg border bg-secondary px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring ${formData.expectedSignDate ? 'text-foreground' : 'text-transparent'}`}
                   />
                   {!formData.expectedSignDate && (
@@ -335,6 +279,38 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                     </span>
                   )}
                 </div>
+                <p className="mt-1 text-2xs text-muted-foreground">只能选当前日和历史日期</p>
+              </FormField>
+
+              {/* 预计收入总金额（元） - 非必填 */}
+              <FormField label="预计收入总金额（元）">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={formData.expectedRevenue}
+                  onChange={e => update('expectedRevenue', e.target.value)}
+                  placeholder="请输入金额"
+                  data-track="填写预计收入总金额"
+                  data-track-type="商机处理"
+                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </FormField>
+
+              {/* 总台数 - 非必填 */}
+              <FormField label="总台数">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
+                  value={formData.totalUnitCount}
+                  onChange={e => update('totalUnitCount', e.target.value)}
+                  placeholder="请输入数量"
+                  data-track="填写总台数"
+                  data-track-type="商机处理"
+                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </FormField>
 
               {/* 赢率 */}
@@ -359,93 +335,18 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 备注 */}
-              <FormField label="备注">
+              {/* 备注 - 默认填充标讯摘要，仍可编辑 */}
+              <FormField label="备注" prefilled={bid.summary ? '自动填充标讯摘要' : false}>
                 <textarea
                   value={formData.remark}
                   onChange={e => update('remark', e.target.value)}
                   rows={3}
                   placeholder="请输入备注信息..."
+                  data-track="编辑商机备注"
+                  data-track-type="商机处理"
                   className="w-full rounded-lg border bg-secondary p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
               </FormField>
-
-              {/* ═══ 产品明细区域 ═══ */}
-              <div className="mb-3 mt-4 flex items-center gap-2">
-                <div className="h-4 w-1 rounded-full bg-primary"></div>
-                <h3 className="text-sm font-semibold text-foreground">产品明细</h3>
-              </div>
-
-              {productDetails.map((detail, index) => (
-                <div key={index} className="rounded-lg border border-border/50 bg-muted/30 p-3 mb-3">
-                  {/* 组头：第N组 + 删除按钮 */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-muted-foreground">第{index + 1}组</span>
-                    {productDetails.length > 1 && (
-                      <button
-                        onClick={() => removeProductDetail(index)}
-                        className="flex items-center gap-1 text-xs text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        删除
-                      </button>
-                    )}
-                  </div>
-
-                  {/* 方案/立项产品组 - 仅产品域=简单方案时显示 */}
-                  {formData.productDomain === '简单方案' && (
-                    <FormField label="方案/立项产品组" required>
-                      <ObjectDropdownSelect
-                        value={detail.solutionGroupId || ''}
-                        items={Object.entries(solutionProductGroups).map(([id, { name }]) => ({ id, name }))}
-                        isOpen={openDropdown === `solutionGroup_${index}`}
-                        onToggle={() => toggleDropdown(`solutionGroup_${index}`)}
-                        onSelect={(id) => { handleSolutionGroupChange(index, id); setOpenDropdown(null) }}
-                      />
-                    </FormField>
-                  )}
-
-                  {/* 物料产品组 */}
-                  <FormField label="物料产品组" required>
-                    <ObjectDropdownSelect
-                      value={detail.materialGroupId}
-                      items={Object.entries(materialProductGroups).map(([id, { name }]) => ({ id, name }))}
-                      isOpen={openDropdown === `materialGroup_${index}`}
-                      onToggle={() => toggleDropdown(`materialGroup_${index}`)}
-                      onSelect={(id) => { handleMaterialGroupChange(index, id); setOpenDropdown(null) }}
-                    />
-                  </FormField>
-
-                  {/* 产线 - 只读 */}
-                  <FormField label="产线">
-                    <input
-                      type="text"
-                      value={detail.productLine}
-                      readOnly
-                      className="h-10 w-full rounded-lg border bg-muted px-3 text-sm text-muted-foreground focus:outline-none cursor-not-allowed"
-                    />
-                  </FormField>
-
-                  {/* 预计收入总金额（元） */}
-                  <FormField label="预计收入总金额（元）" required>
-                    <input
-                      type="number"
-                      value={detail.estimatedAmount}
-                      onChange={e => handleProductDetailChange(index, 'estimatedAmount', e.target.value)}
-                      placeholder="0"
-                      className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </FormField>
-                </div>
-              ))}
-
-              {/* 添加产品明细按钮 */}
-              <button
-                onClick={addProductDetail}
-                className="w-full rounded-lg border border-dashed border-primary/50 py-2 text-xs text-primary"
-              >
-                + 添加产品明细
-              </button>
             </div>
           </div>
 
@@ -497,48 +398,6 @@ function DropdownSelect({ value, options, isOpen, onToggle, onSelect }: {
               }`}
             >
               {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** 对象下拉选择器（id/name 选项，支持下拉展示name，选中后存id） */
-function ObjectDropdownSelect({ value, items, isOpen, onToggle, onSelect }: {
-  value: string
-  items: Array<{ id: string; name: string }>
-  isOpen: boolean
-  onToggle: () => void
-  onSelect: (id: string) => void
-}) {
-  const selectedItem = items.find(item => item.id === value)
-  const displayValue = selectedItem?.name || '请选择'
-
-  return (
-    <div className="relative">
-      <button
-        onClick={onToggle}
-        className="flex h-10 w-full items-center justify-between rounded-lg border bg-secondary px-3 text-sm text-foreground"
-      >
-        <span>{displayValue}</span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-11 z-10 rounded-lg border bg-card py-1 animate-scale-in max-h-48 overflow-y-auto"
-          style={{ boxShadow: 'var(--shadow-elevated)' }}>
-          {items.map(item => (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              className={`w-full px-3 py-2 text-left text-sm ${
-                value === item.id
-                  ? 'bg-accent font-semibold text-primary'
-                  : 'text-foreground active:bg-secondary'
-              }`}
-            >
-              {item.name}
             </button>
           ))}
         </div>

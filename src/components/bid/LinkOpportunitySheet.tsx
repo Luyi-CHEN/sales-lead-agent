@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { type BidInfo, mockOpportunities, mockCustomerDatabase } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
 import { X, Search, CheckCircle2, Link2, Building2, Briefcase, ChevronRight } from 'lucide-react'
@@ -6,7 +6,7 @@ import { X, Search, CheckCircle2, Link2, Building2, Briefcase, ChevronRight } fr
 interface LinkOpportunitySheetProps {
   bid: BidInfo
   onClose: () => void
-  onLink: (oppId: string, linkedCdbId?: string) => void
+  onLink: (oppId: string, linkedCdbId?: string, manualOppId?: string) => void
 }
 
 export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySheetProps) {
@@ -14,6 +14,7 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCdbId, setSelectedCdbId] = useState<string>('')
   const [cdbSearchQuery, setCdbSearchQuery] = useState('')
+  const [manualOppId, setManualOppId] = useState('')
 
   const needCdbId = !bid.cdbId
   const cdbIdReady = !needCdbId || !!selectedCdbId
@@ -28,7 +29,9 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
       opp.id.includes(searchQuery)
     )
 
-  const canSubmit = selectedId && cdbIdReady
+  const trimmedManualId = manualOppId.trim()
+  const hasAnyOppRef = !!selectedId || !!trimmedManualId
+  const canSubmit = hasAnyOppRef && cdbIdReady
 
   return (
     <>
@@ -53,7 +56,7 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
               </h2>
               <p className="text-2xs text-muted-foreground mt-0.5">
                 {cdbIdReady
-                  ? '选择一个商机与当前标讯关联'
+                  ? '单选一个商机与当前标讯关联'
                   : '请先补录CDBID，系统将据此匹配潜在商机'
                 }
               </p>
@@ -166,13 +169,13 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
                 <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg bg-accent p-2.5">
                   <Link2 className="h-4 w-4 text-primary shrink-0" />
                   <p className="text-2xs text-accent-foreground">
-                    该标讯可能关联 {bid.relatedOpportunityCount} 条商机，请从下方列表中选择
+                    该标讯可能关联 {bid.relatedOpportunityCount} 条商机，请从下方列表中单选
                   </p>
                 </div>
               )}
 
               {/* Opportunity List */}
-              <div className="overflow-y-auto scrollbar-hide px-4" style={{ maxHeight: '45vh' }}>
+              <div className="overflow-y-auto scrollbar-hide px-4" style={{ maxHeight: '32vh' }}>
                 {filteredOpportunities.length === 0 ? (
                   <div className="py-10 text-center text-sm text-muted-foreground">
                     未找到匹配的商机
@@ -182,7 +185,7 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
                     {filteredOpportunities.map(opp => (
                       <div
                         key={opp.id}
-                        onClick={() => setSelectedId(opp.id)}
+                        onClick={() => setSelectedId(prev => prev === opp.id ? null : opp.id)}
                         className={`card-press relative cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
                           selectedId === opp.id
                             ? 'border-primary bg-accent ring-1 ring-primary'
@@ -215,6 +218,22 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
                   </div>
                 )}
               </div>
+              {/* 手动填写商机编号（非必填） */}
+              <div className="px-4 pb-3 pt-1">
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  商机编号
+                  <span className="ml-1.5 text-2xs text-muted-foreground/80">（非必填）</span>
+                </label>
+                <input
+                  type="text"
+                  value={manualOppId}
+                  onChange={e => setManualOppId(e.target.value)}
+                  placeholder="如未找到可关联商机，可手动填写"
+                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  data-track="手动填写商机编号"
+                  data-track-type="商机处理"
+                />
+              </div>
             </>
           )}
 
@@ -223,13 +242,13 @@ export function LinkOpportunitySheet({ bid, onClose, onLink }: LinkOpportunitySh
             <Button
               size="full"
               disabled={!canSubmit}
-              onClick={() => selectedId && onLink(selectedId, selectedCdbId || undefined)}
+              onClick={() => { if (!canSubmit) return; onLink(selectedId || '', selectedCdbId || undefined, trimmedManualId || undefined) }}
               data-track="确认关联已有商机"
               data-track-type="商机处理"
             >
               {!cdbIdReady
                 ? '请先补录CDBID'
-                : selectedId ? '确认关联' : '请选择一个商机'
+                : (selectedId ? '确认关联' : (trimmedManualId ? '确认关联（手填编号）' : '请选择或填写商机编号'))
               }
             </Button>
           </div>
