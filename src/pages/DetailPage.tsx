@@ -263,23 +263,25 @@ export function DetailPage() {
           </div>
         )}
 
-        {/* 跟进中信息卡片 */}
-        {isFollowing && bid.followUpRemark && (
+        {/* 跟进备注信息卡片：有数据即展示（任何状态），仅「跟进中」状态可编辑 */}
+        {bid.followUpRemark && (
           <div className="bg-warning-muted mx-4 mt-3 rounded-xl border border-warning/20 p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-warning" />
                 <span className="text-xs font-semibold text-warning">跟进备注</span>
               </div>
-              <button
-                onClick={() => setShowFollowUpSheet(true)}
-                className="flex items-center gap-1 text-xs text-warning hover:text-warning/80"
-                data-track="编辑跟进备注"
-                data-track-type="商机处理"
-              >
-                <Pencil className="h-3 w-3" />
-                编辑
-              </button>
+              {isFollowing && (
+                <button
+                  onClick={() => setShowFollowUpSheet(true)}
+                  className="flex items-center gap-1 text-xs text-warning hover:text-warning/80"
+                  data-track="编辑跟进备注"
+                  data-track-type="商机处理"
+                >
+                  <Pencil className="h-3 w-3" />
+                  编辑
+                </button>
+              )}
             </div>
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{bid.followUpRemark}</p>
           </div>

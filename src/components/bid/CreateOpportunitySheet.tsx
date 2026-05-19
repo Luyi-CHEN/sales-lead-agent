@@ -132,14 +132,11 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 商机来源 */}
+              {/* 商机来源 - 只读 */}
               <FormField label="商机来源" required>
-                <input
-                  type="text"
-                  value={formData.source}
-                  onChange={e => update('source', e.target.value)}
-                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+                <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                  {formData.source}
+                </div>
               </FormField>
 
               {/* 商机名称 */}
@@ -152,14 +149,11 @@ export function CreateOpportunitySheet({ bid, onClose, onSubmit }: CreateOpportu
                 />
               </FormField>
 
-              {/* 客户名称 */}
-              <FormField label="客户名称" required prefilled="自动填充标讯采购单位">
-                <input
-                  type="text"
-                  value={formData.customer}
-                  onChange={e => update('customer', e.target.value)}
-                  className="h-10 w-full rounded-lg border bg-secondary px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+              {/* 客户名称 - 只读 */}
+              <FormField label="客户名称" required prefilled="自动填充客户名称">
+                <div className="flex h-10 w-full items-center rounded-lg border bg-muted px-3 text-sm text-muted-foreground cursor-not-allowed">
+                  {formData.customer}
+                </div>
               </FormField>
 
               {/* CDBID */}
