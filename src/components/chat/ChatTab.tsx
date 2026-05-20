@@ -1,8 +1,8 @@
-﻿import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Sparkles, MapPin, ChevronRight, Clock, Banknote,
-  RotateCw, Send, CheckSquare, Tv, Mic, Users, Briefcase,
+  RotateCw, Send, CheckSquare, Gift, Mic, Users, Briefcase,
   FileSearch, TrendingUp, Lightbulb, ArrowRight, Star, Tag, type LucideIcon,
 } from 'lucide-react'
 import { useAppState } from '@/store/app-store'
@@ -307,7 +307,7 @@ export function ChatTab() {
           })}
         </div>
 
-        <div className="flex items-center gap-2 rounded-full bg-white px-2 py-1.5 shadow-[0_2px_10px_-2px_rgba(80,60,180,0.14)] ring-1 ring-black/5">
+        <div className="flex items-center gap-2 rounded-full bg-secondary px-2 py-2 shadow-[0_2px_10px_-2px_rgba(80,60,180,0.14)] ring-1 ring-black/5">
           <input
             ref={inputRef}
             type="text"
@@ -379,34 +379,28 @@ function WelcomeScreen({
     <div className="flex flex-col px-4 pt-4 pb-6">
       {/* Hero: greeting + subtitle + mascot */}
       <div className="relative pr-28">
-        <h1 className="text-[26px] font-bold leading-tight text-foreground">
+        <h1 className="text-[28px] font-bold leading-tight text-foreground">
           Hi~ {greeting}！
         </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <p className="mt-1 text-[12px] text-muted-foreground">
           我是销售智能体，7*24小时为你服务
         </p>
 
         {/* Mascot */}
-        <div className="pointer-events-none absolute -top-2 right-0 animate-float">
-          <div className="relative">
-            <div
-              className="flex h-24 w-24 items-center justify-center rounded-full text-white shadow-[0_10px_24px_-6px_rgba(120,80,220,0.35)]"
-              style={{ background: 'var(--gradient-primary)' }}
-            >
-              <Sparkles className="h-10 w-10" />
-            </div>
-            <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[hsl(0_80%_60%)] text-[10px] font-bold text-white ring-2 ring-white">
-              S
-            </span>
-          </div>
+        <div className="pointer-events-none absolute -top-3 right-0 animate-float">
+          <img
+            src={`${import.meta.env.BASE_URL}mascot.png`}
+            alt="销售智能体"
+            className="h-28 w-auto drop-shadow-[0_10px_24px_rgba(46,98,255,0.25)]"
+          />
         </div>
       </div>
 
       {/* Data cards: visits + bids */}
-      <div className="mt-10 grid grid-cols-2 gap-2.5">
+      <div className="mt-6 grid grid-cols-2 gap-2.5">
         <button
           onClick={() => onDataCardClick('visits')}
-          data-track="点击测试任务卡片"
+          data-track="点击待拜访客户卡片"
           data-track-type="数据入口"
           className="glass-card rounded-2xl p-3 text-left shadow-[0_6px_18px_-8px_rgba(100,80,200,0.2)] active:scale-[0.98] transition-transform"
         >
@@ -414,36 +408,36 @@ function WelcomeScreen({
             <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[hsl(152_69%_41%)] text-white">
               <CheckSquare className="h-3 w-3" />
             </span>
-            <span className="text-[13px] font-semibold text-foreground">测试任务</span>
+            <span className="text-[13px] font-semibold text-foreground">待拜访客户</span>
           </div>
           <div className="space-y-1">
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
               <span>任务关键数量 X</span>
-              <span><span className="text-[16px] font-bold text-foreground">{visitStats.undeveloped}</span>家</span>
+              <span><span className="text-[18px] font-bold text-foreground">{visitStats.undeveloped}</span>家</span>
             </div>
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
               <span>任务关键数量 Y</span>
-              <span><span className="text-[16px] font-bold text-foreground">{visitStats.contacted}</span>家</span>
+              <span><span className="text-[18px] font-bold text-foreground">{visitStats.contacted}</span>家</span>
             </div>
           </div>
         </button>
 
         <button
           onClick={() => onDataCardClick('bids')}
-          data-track="点击已分配标讯卡片"
+          data-track="点击待处理标讯卡片"
           data-track-type="数据入口"
           className="glass-card rounded-2xl p-3 text-left shadow-[0_6px_18px_-8px_rgba(100,80,200,0.2)] active:scale-[0.98] transition-transform"
         >
           <div className="mb-2 flex items-center gap-1.5">
-            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[hsl(268_80%_60%)] text-white">
-              <Tv className="h-3 w-3" />
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[hsl(38_92%_50%)] text-white">
+              <Gift className="h-3 w-3" />
             </span>
-            <span className="text-[13px] font-semibold text-foreground">已分配标讯</span>
+            <span className="text-[13px] font-semibold text-foreground">待处理标讯</span>
           </div>
           <div className="space-y-1">
             <div className="flex items-baseline justify-between text-[12px] text-muted-foreground">
               <span>新分配的标讯</span>
-              <span><span className="text-[16px] font-bold text-foreground">{bidStats.newAssigned}</span>条</span>
+              <span><span className="text-[18px] font-bold text-foreground">{bidStats.newAssigned}</span>条</span>
             </div>
           </div>
         </button>
@@ -459,7 +453,7 @@ function WelcomeScreen({
               onClick={() => onPromptClick(p.text)}
               data-track={`点击预置问题「${p.text}」`}
               data-track-type="对话交互"
-              className="card-press flex items-center gap-3 rounded-full border border-black/5 bg-white/90 px-3 py-2.5 text-left text-[13px] text-foreground shadow-[0_2px_10px_-4px_rgba(80,60,180,0.15)]"
+              className="card-press flex h-11 items-center gap-3 rounded-full border border-[hsl(var(--ai-primary))]/40 bg-gradient-to-br from-white to-[hsl(218_100%_99%)] px-3 text-left text-sm text-foreground shadow-[0_2px_10px_-4px_rgba(80,60,180,0.15)]"
             >
               <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white', p.badgeClass)}>
                 <Icon className="h-3.5 w-3.5" />

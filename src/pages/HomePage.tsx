@@ -19,7 +19,7 @@ export function HomePage() {
     <div className="flex h-full flex-col hero-bg">
       {/* Top Bar: 汉堡 + 三Tab + 加号 */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/40">
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
           <button
             data-track="打开侧边菜单"
             data-track-type="导航"
@@ -37,7 +37,7 @@ export function HomePage() {
                   onClick={() => setActiveTab(tab.key)}
                   data-track={`切换到「${tab.label}」`}
                   data-track-type="导航"
-                  className="relative py-1 text-[15px] font-medium transition-colors"
+                  className="relative py-1 text-base font-medium transition-colors"
                 >
                   <span
                     className={cn(

@@ -36,6 +36,7 @@ export interface BidInfo {
   productLabel?: string               // 产品标签
   bidKeywords?: string                // 标讯关键词
   productManager?: string             // 产品经理
+  aiVerifiedKeywords?: string         // AI核验关键词
 }
 
 export interface Opportunity {
@@ -83,6 +84,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     productLabel: 'Intel平台通用服务器',
     bidKeywords: '云计算、大数据',
     productManager: 'huanghs',
+    aiVerifiedKeywords: '智算、服务器',
   },
   {
     id: 'BX-2026-002',
@@ -109,6 +111,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     productLabel: '联想/锐捷数据中心交换机',
     bidKeywords: '数据中心交换机',
     productManager: 'dongliang7',
+    aiVerifiedKeywords: '超融合、东数西算',
   },
   {
     id: 'BX-2026-003',
@@ -136,6 +139,7 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     productLabel: 'NVIDIA-VGPU',
     bidKeywords: 'GPU虚拟化',
     productManager: 'weitt',
+    aiVerifiedKeywords: 'AI芯片、超算中心',
   },
   {
     id: 'BX-2026-004',
@@ -159,6 +163,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=b1e4f1db-e43e-4bbd-a2ed-6b91e779e32f',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '数据中心网络设备',
+    bidKeywords: '信息化设备',
+    productManager: 'zhaojy',
+    aiVerifiedKeywords: '智慧城市、服务器',
   },
   {
     id: 'BX-2026-005',
@@ -183,6 +191,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=487b56a9-2efc-43c4-9dca-8b6d6ffee1c0',
     status: 'assigned',
     relatedOpportunityCount: 3,
+    productLabel: '企业级存储',
+    bidKeywords: '存储扩容、双活存储',
+    productManager: 'liuwb',
+    aiVerifiedKeywords: '超融合、东数西算、服务器',
   },
   {
     id: 'BX-2026-006',
@@ -206,6 +218,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'https://njgc.jfh.com/purchase/detail?id=23976&type=14',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'GPU服务器',
+    bidKeywords: 'AI平台、GPU服务器',
+    productManager: 'chenxf',
+    aiVerifiedKeywords: '智算、AI芯片',
   },
   {
     id: 'BX-2026-007',
@@ -230,6 +246,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=c0502d4b-1379-4df4-9db5-4b34c85e0dd4&planId',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '通用服务器',
+    bidKeywords: '信息化、教育',
+    productManager: 'yangzl',
+    aiVerifiedKeywords: '云课堂、智慧城市',
   },
   {
     id: 'BX-2026-008',
@@ -253,6 +273,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'https://www.plap.mil.cn/freecms/site/juncai/ggxx/info/2025/8a1d039896b962b10196d17ce4140b78.html',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'AI推理服务器',
+    bidKeywords: '智能化分析、视频流',
+    productManager: 'wangmh',
+    aiVerifiedKeywords: '服务器、超算中心',
   },
   {
     id: 'BX-2026-009',
@@ -277,6 +301,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4c47cadc-7252-4c89-a21b-e89f36293f05',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '通用服务器',
+    bidKeywords: '信息化设备',
+    productManager: 'liuqs',
+    aiVerifiedKeywords: '云课堂、半导体',
   },
   {
     id: 'BX-2026-010',
@@ -300,6 +328,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=7ab592ae-52cd-414a-bf3b-73adab0023a5',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'AI训练服务器',
+    bidKeywords: 'AI大模型、智能体',
+    productManager: 'zhangl',
+    aiVerifiedKeywords: '智算、AI芯片、东数西算',
   },
   {
     id: 'BX-2026-011',
@@ -324,6 +356,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=5532b8cc-f9ef-441a-8008-41505fd2879d',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '数据中心交换机',
+    bidKeywords: '安全设备、防火墙',
+    productManager: 'sunhk',
+    aiVerifiedKeywords: '超融合、半导体',
   },
   {
     id: 'BX-2026-012',
@@ -347,6 +383,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=23f56b08-1cdf-4ffe-8a32-f339d26dca49',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '边缘计算服务器',
+    bidKeywords: '人工智能、实训',
+    productManager: 'tangwy',
+    aiVerifiedKeywords: '云课堂、AI芯片',
   },
   {
     id: 'BX-2026-013',
@@ -371,6 +411,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'NVIDIA GPU服务器',
+    bidKeywords: 'GPU超算、HPC',
+    productManager: 'weitt',
+    aiVerifiedKeywords: '超算中心、智算、服务器',
   },
   {
     id: 'BX-2026-014',
@@ -394,6 +438,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'AI一体机',
+    bidKeywords: '人工智能、大模型',
+    productManager: 'huanghs',
+    aiVerifiedKeywords: '智慧城市、AI芯片',
   },
   {
     id: 'BX-2026-015',
@@ -418,6 +466,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'GPU超算节点',
+    bidKeywords: '算力设备、GPU',
+    productManager: 'dongliang7',
+    aiVerifiedKeywords: '超算中心、东数西算',
   },
   {
     id: 'BX-2026-016',
@@ -441,6 +493,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=20c5b224-5471-474e-89c7-e7d50be12306',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '数据中心交换机',
+    bidKeywords: '网络设备、校园网',
+    productManager: 'chenxf',
+    aiVerifiedKeywords: '超融合、服务器',
   },
   {
     id: 'BX-2026-017',
@@ -465,6 +521,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=4095aeba-246e-4de4-85b6-88052b324531',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'AI+HPC集群',
+    bidKeywords: 'GPU超算、AI调度',
+    productManager: 'weitt',
+    aiVerifiedKeywords: '智算、超算中心',
   },
   {
     id: 'BX-2026-018',
@@ -488,6 +548,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=866cc721-3014-45d6-9151-57577a64007a',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'AI一体机',
+    bidKeywords: '大模型、多模态',
+    productManager: 'huanghs',
+    aiVerifiedKeywords: 'AI芯片、半导体',
   },
   {
     id: 'BX-2026-019',
@@ -512,6 +576,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'https://www.ccgp-sichuan.gov.cn/maincms-web/article?type=notice&id=04912ca4-4c3d-44cc-aa08-d9415659fa40&planId',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: '智慧教育终端',
+    bidKeywords: '触控一体机、教学设备',
+    productManager: 'liuqs',
+    aiVerifiedKeywords: '云课堂、智慧城市',
   },
   {
     id: 'BX-2026-020',
@@ -535,6 +603,10 @@ const _RAW_BIDS: Array<Omit<BidInfo, 'summary' | 'highValueCustomer'>> = [
     sourceUrl: 'http://cgyx.ccgp.gov.cn/cgyx/pub/proJ/details?projId=a1b2c3d4-5678-90ab-cdef-1234567890ab',
     status: 'assigned',
     relatedOpportunityCount: 0,
+    productLabel: 'GPU超算节点',
+    bidKeywords: '算力设备、GPU',
+    productManager: 'dongliang7',
+    aiVerifiedKeywords: '东数西算、服务器、超融合',
   },
 ]
 

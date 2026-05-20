@@ -198,10 +198,8 @@ export function DetailPage() {
             <InfoCell icon={<Calendar className="h-3.5 w-3.5" />} label="采购开始" value={bid.startDate} />
             <InfoCell icon={<Clock className="h-3.5 w-3.5" />} label="采购截止" value={bid.deadline} />
             <InfoCell icon={<Layers className="h-3.5 w-3.5" />} label="主行业" value={bid.industry} />
-            <InfoCell icon={<Tag className="h-3.5 w-3.5" />} label="关键词" value={bid.keywords || '—'} />
-            {bid.totalQuantity && (
-              <InfoCell icon={<MapPin className="h-3.5 w-3.5" />} label="数量总计" value={bid.totalQuantity} />
-            )}
+            <InfoCell icon={<MapPin className="h-3.5 w-3.5" />} label="数量总计" value={bid.totalQuantity || '—'} />
+            <div className="col-span-2"><InfoCell icon={<Tag className="h-3.5 w-3.5" />} label="AI核验关键词" value={bid.aiVerifiedKeywords || '—'} /></div>
           </div>
         </div>
 

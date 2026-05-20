@@ -108,7 +108,7 @@ src/
 │
 ├── components/
 │   ├── chat/
-│   │   └── ChatTab.tsx                  # AI 助手对话（含意图识别引擎）
+│   │   └── ChatTab.tsx                  # AI 助手对话（含意图识别引擎 + 首页 WelcomeScreen）
 │   │
 │   ├── bid/
 │   │   ├── BidCard.tsx                  # 标讯卡片组件
@@ -157,7 +157,15 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
 
 ### 1. AI 助手对话
 
-以对话为中心的交互范式，前端规则引擎实现意图识别：
+以对话为中心的交互范式，前端规则引擎实现意图识别。首页 WelcomeScreen 已对齐 Figma 2026-05-13 设计规范：
+
+- **问候语**：28px 粗体 + 12px 副标题
+- **Mascot 切图**：右上浮动真人女性销售形象插画（public/mascot.png）
+- **双数据卡片**：左「待拜访客户」（绿色 CheckSquare）+ 右「待处理标讯」（黄色 #F59E0B Gift）；数字 18px
+- **预置问题按钮**：AI 主色边框 order-[var(--color-ai-primary)] + 渐变底
+- **输入框**：灰底 g-secondary + 全圆角
+
+意图识别引擎支持的用户意图：
 
 | 意图 | 示例输入 | 系统响应 |
 |------|---------|---------|
@@ -192,7 +200,8 @@ vite-plugin-analytics-api.ts             # Vite 开发服务器分析 API 插件
   - 按钮使用 `<button>` 元素，添加 `active:scale-95` 点击缩放动画反馈，提升触控体验
   - 补充 `data-track="拨号采购人"` 埋点属性，PC 分析看板可统计用户拨号行为
 - 原始公告链接跳转
-- **产品信息模块**：展示产品标签、标讯关键词、产品经理三个字段
+- **AI核验关键词**：关键信息模块展示 AI 核验后的关键词（独占整行，替代原始 keywords 字段）
+- **产品信息模块**：展示产品标签、标讯关键词、产品经理三个字段（全部 20 条标讯均已填充）
 - 商机操作：【关联已有商机】【新建商机】【无商机】【跟进中】四种反馈按钮
   - **关联已有商机**：只支持单选（一条标讯只能关联一个 D365 商机）；列表下方新增手填「商机编号」输入框（如未在列表中找到可关联的商机，可手动填写编号）
 
@@ -418,12 +427,16 @@ interface BidInfo {
   procurementSummary: string // 采购需求概况
   totalQuantity: string      // 数量总计
   keywords: string           // 关键词
+  aiVerifiedKeywords?: string // AI核验关键词（详情页关键信息模块展示）
   budgetAmount: string       // 预算金额（万元）
   startDate: string          // 预计采购开始时间
   deadline: string           // 预计采购截止时间
   contactPhone: string       // 采购人电话
   contactPerson: string      // 采购人联系人
   sourceUrl: string          // 原始公告链接
+  productLabel?: string       // 产品标签
+  bidKeywords?: string        // 标讯关键词
+  productManager?: string     // 产品经理
   cdbId?: string             // 客户主数据库唯一编号
   // 状态：pending=已分配(待跟进)；linked=已关联意向招标；no_opportunity/new_opportunity=已反馈（无商机/新商机）
   status: 'assigned' | 'following' | 'converted' | 'abandoned'
@@ -606,7 +619,8 @@ export const api = {
 :root {
   --background: 0 0% 97.5%;    /* 页面背景 */
   --foreground: 222 47% 11%;   /* 主文字 */
-  --primary: 221 83% 53%;      /* 主色调（蓝） */
+  --primary: 217 91% 54%;      /* 主色调 #2563EB */
+  --ai-primary: 226 100% 59%;  /* AI 主色 #2E62FF */
   --success: 142 71% 45%;      /* 成功（绿） */
   --destructive: 0 84% 60%;    /* 危险（红） */
   --accent: 210 40% 96%;       /* 强调背景 */
